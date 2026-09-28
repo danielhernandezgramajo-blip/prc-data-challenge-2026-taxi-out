@@ -1,0 +1,8 @@
+delta,pct_disponible,corr_con_target,MAE_como_predictor,RMSE_como_predictor,pct_|error|<=60s,median_delta
+mvt_minus_aobt3,98.92,0.5358,238.1,384.9,21.02,958.0
+mvt_minus_eobt1,98.92,0.5563,465.3,676.7,12.66,1255.0
+mvt_minus_lobt,98.92,0.5141,515.2,740.1,11.26,1237.0
+mvt_minus_iobt,98.92,0.5155,514.3,739.8,11.3,1238.0
+mvt_minus_sched,100.0,0.232,1035.2,2412.7,9.57,1402.0
+aobt3_minus_sched,98.92,0.1138,1092.8,2200.2,3.49,420.0
+block_minus_aobt3 (LEAK: usa BLOCK),98.92,-0.5603,985.6,1201.1,1.57,51.0

@@ -1,0 +1,31 @@
+variable,dtype,tipo,null_pct_train_dep,null_pct_rank_dep,cardinalidad_train_dep,cardinalidad_rank_dep,oculta_en_ranking_dep,descripcion
+MVT_ID_mvt,Float64,identificador,0.0,0.0,2085047,344841,false,ID único del movimiento (fila). Clave de la submission. NO es predictor.
+FLIGHT_ID_mvt,Float64,identificador,1.075,1.532,2062621,339558,false,ID del vuelo en el sistema de movimientos (nulo cuando no se pudo enlazar).
+FLIGHT_mvt,String,categórica,0.009,0.017,45718,20330,false,Número de vuelo comercial (p. ej. LH982).
+FLIGHT_RULE_mvt,String,categórica,0.01,0.006,3,3,false,"Reglas de vuelo del movimiento (I = IFR, V = VFR…)."
+ADEP_mvt,String,categórica,0.0,0.0,10,10,false,Aeródromo de salida (ICAO). Para DEP es el aeropuerto donde ocurre el taxi-out.
+ADES_mvt,String,categórica,0.006,0.004,1569,1106,false,Aeródromo de destino (ICAO).
+PHASE_mvt,String,categórica,0.0,0.0,1,1,false,Fase del movimiento: DEP (salida) o ARR (llegada). Solo DEP se predice.
+MVT_TIME_UTC_mvt,"Datetime(time_unit='us', time_zone='UTC')",temporal,0.0,0.0,1933257,320158,false,"Hora del movimiento: despegue real (ATOT) para DEP, aterrizaje (ALDT) para ARR. Disponible en ranking."
+BLOCK_TIME_UTC_mvt,"Datetime(time_unit='us', time_zone='UTC')",temporal,0.0,100.0,1849264,1,true,"Hora real de bloques: AOBT (off-block) para DEP, AIBT (in-block) para ARR. OCULTA en ranking-DEP → define el target."
+SCHED_TIME_UTC_mvt,"Datetime(time_unit='us', time_zone='UTC')",temporal,0.0,0.0,99290,16987,false,Hora programada del movimiento (STD para DEP).
+AIRCRAFT_TYPE_mvt,String,categórica,0.072,0.113,270,200,false,Tipo de aeronave ICAO según el aeropuerto.
+RUNWAY_mvt,String,categórica,0.0,0.0,53,50,false,Pista utilizada (contiene cadenas 'NA' literales).
+STAND_mvt,String,categórica,0.001,0.001,1900,1698,false,Stand/puesto de estacionamiento de origen.
+TAXITIME_SEC_mvt,Int32,numérica (target),0.0,100.0,5176,1,true,Taxi-out en segundos = MVT_TIME − BLOCK_TIME. Target (nulo en ranking-DEP).
+LOBT_flt,"Datetime(time_unit='us', time_zone='UTC')",temporal,1.078,1.534,186898,32780,false,Last Off-Block Time del plan de vuelo (última EOBT válida).
+CALLSIGN_flt,String,categórica,1.078,1.534,44825,20376,false,Indicativo ATC del plan de vuelo.
+ADEP_flt,String,categórica,1.078,1.534,11,11,false,Aeródromo de salida según plan de vuelo (redundante con ADEP_mvt).
+ADES_flt,String,categórica,1.078,1.534,1439,1034,false,Aeródromo de destino real según plan de vuelo.
+ADES_FILED_flt,String,categórica,1.078,1.534,1436,1032,false,Aeródromo de destino presentado originalmente.
+MARKET_SEGMENT_flt,String,categórica,1.078,1.534,9,9,false,"Segmento de mercado (Mainline, Low-cost, Regional, Business, Cargo…)."
+IOBT_flt,"Datetime(time_unit='us', time_zone='UTC')",temporal,1.078,1.534,178165,31285,false,Initial Off-Block Time (primera EOBT presentada).
+FLIGHT_RULE_flt,String,categórica,1.081,1.538,5,4,false,Reglas de vuelo del plan de vuelo.
+FLIGHT_TYPE_flt,String,categórica,1.078,1.534,6,6,false,"Tipo de vuelo (S = scheduled, N = non-scheduled, G = general…)."
+AIRCRAFT_TYPE_flt,String,categórica,1.078,1.534,240,181,false,Tipo de aeronave ICAO según plan de vuelo.
+WK_TBL_CAT_flt,String,categórica,1.081,1.538,5,5,false,Categoría de estela turbulenta (L/M/H/J).
+AIRCRAFT_OPERATOR_flt,String,categórica,1.078,1.534,677,580,false,Operador (hash SHA-256 anonimizado).
+EOBT_1_flt,"Datetime(time_unit='us', time_zone='UTC')",temporal,1.078,1.534,295512,50721,false,EOBT del primer plan de vuelo (FPL) recibido.
+ARVT_1_flt,"Datetime(time_unit='us', time_zone='UTC')",temporal,1.078,1.534,1981547,326575,false,Hora de llegada estimada/real del primer mensaje (ARVT). Posterior al despegue.
+AOBT_3_flt,"Datetime(time_unit='us', time_zone='UTC')",temporal,1.078,1.534,486942,83436,false,Actual Off-Block Time reportada vía DPI/A-CDM (resolución de minuto). Disponible en ranking: cuasi-target.
+ARVT_3_flt,"Datetime(time_unit='us', time_zone='UTC')",temporal,1.078,1.534,1726893,279145,false,Hora de llegada real (ARVT) del último mensaje. Posterior al despegue.

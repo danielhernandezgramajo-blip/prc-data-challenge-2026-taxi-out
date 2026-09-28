@@ -1,0 +1,9 @@
+variable,riesgo,motivo
+BLOCK_TIME_UTC_mvt,PROHIBIDA,Nula en ranking-DEP. Target = MVT_TIME − BLOCK_TIME exactamente.
+TAXITIME_SEC_mvt,TARGET,Nula en ranking-DEP.
+AOBT_3_flt,ALTO (permitida),"AOBT real a resolución de minuto. MVT_TIME − AOBT_3 ≈ target. Disponible en ranking: es la baseline operacional, no leakage según las reglas, pero domina cualquier modelo."
+MVT_TIME_UTC_mvt,MEDIO (permitida),Hora de despegue real: es 'futuro' respecto al off-block pero se da como input. Necesaria para todas las diferencias temporales.
+ARVT_1_flt / ARVT_3_flt,BAJO,Hora de llegada al destino: posterior al despegue; sólo aporta duración de vuelo/ruta. Sin relación directa con el taxi-out.
+EOBT_1_flt / LOBT_flt / IOBT_flt / SCHED_TIME,BAJO,Horas planificadas. MVT_TIME − EOBT ≈ taxi-out + retraso de salida: útil como fallback cuando falta AOBT_3.
+MVT_ID_mvt / FLIGHT_ID_mvt,IDENTIFICADOR,Correlacionan con el tiempo (ids crecientes). No usar como predictor.
+Filas ARR del ranking,CONTEXTO,Taxi-in real 2026 disponible: puede usarse para features de congestión del aeropuerto en la misma hora (no es leakage: es input del ranking).

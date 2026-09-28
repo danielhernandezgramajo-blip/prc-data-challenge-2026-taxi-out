@@ -1,0 +1,31 @@
+column,dtype
+MVT_ID_mvt,Float64
+FLIGHT_ID_mvt,Float64
+FLIGHT_mvt,String
+FLIGHT_RULE_mvt,String
+ADEP_mvt,String
+ADES_mvt,String
+PHASE_mvt,String
+MVT_TIME_UTC_mvt,"Datetime(time_unit='us', time_zone='UTC')"
+BLOCK_TIME_UTC_mvt,"Datetime(time_unit='us', time_zone='UTC')"
+SCHED_TIME_UTC_mvt,"Datetime(time_unit='us', time_zone='UTC')"
+AIRCRAFT_TYPE_mvt,String
+RUNWAY_mvt,String
+STAND_mvt,String
+TAXITIME_SEC_mvt,Int32
+LOBT_flt,"Datetime(time_unit='us', time_zone='UTC')"
+CALLSIGN_flt,String
+ADEP_flt,String
+ADES_flt,String
+ADES_FILED_flt,String
+MARKET_SEGMENT_flt,String
+IOBT_flt,"Datetime(time_unit='us', time_zone='UTC')"
+FLIGHT_RULE_flt,String
+FLIGHT_TYPE_flt,String
+AIRCRAFT_TYPE_flt,String
+WK_TBL_CAT_flt,String
+AIRCRAFT_OPERATOR_flt,String
+EOBT_1_flt,"Datetime(time_unit='us', time_zone='UTC')"
+ARVT_1_flt,"Datetime(time_unit='us', time_zone='UTC')"
+AOBT_3_flt,"Datetime(time_unit='us', time_zone='UTC')"
+ARVT_3_flt,"Datetime(time_unit='us', time_zone='UTC')"

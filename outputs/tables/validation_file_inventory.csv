@@ -1,0 +1,15 @@
+file,rows,cols,row_groups,size_mb,opens
+training_2025-01-01_2025-02-01.parquet,307257,30,1,21.2,true
+training_2025-02-01_2025-03-01.parquet,287411,30,1,19.8,true
+training_2025-03-01_2025-04-01.parquet,328622,30,1,22.6,true
+training_2025-04-01_2025-05-01.parquet,350288,30,1,23.8,true
+training_2025-05-01_2025-06-01.parquet,370105,30,1,25.2,true
+training_2025-06-01_2025-07-01.parquet,365986,30,1,25.0,true
+training_2025-07-01_2025-08-01.parquet,381161,30,1,26.0,true
+training_2025-08-01_2025-09-01.parquet,382047,30,1,26.0,true
+training_2025-09-01_2025-10-01.parquet,367679,30,1,25.1,true
+training_2025-10-01_2025-11-01.parquet,371163,30,1,25.4,true
+training_2025-11-01_2025-12-01.parquet,324530,30,1,22.2,true
+training_2025-12-01_2026-01-01.parquet,331548,30,1,22.7,true
+ranking.parquet,689534,30,1,43.6,true
+submitting.parquet,344841,2,1,1.7,true

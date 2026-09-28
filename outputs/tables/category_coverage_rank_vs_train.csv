@@ -1,0 +1,7 @@
+variable,cat_train,cat_rank,pct_filas_rank_no_vistas
+ADEP_mvt,10,10,0.0
+ADEP_mvt+RUNWAY_mvt,70,63,0.001
+ADEP_mvt+STAND_mvt,2725,2454,0.462
+AIRCRAFT_TYPE_mvt,270,200,0.118
+AIRCRAFT_OPERATOR_flt,677,580,1.585
+MARKET_SEGMENT_flt,9,9,1.534

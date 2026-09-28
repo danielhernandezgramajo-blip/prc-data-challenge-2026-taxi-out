@@ -1,0 +1,31 @@
+{
+  "folds": [
+    "F1_jul",
+    "F2_nov",
+    "F3_dec"
+  ],
+  "models": [
+    "global",
+    "airport",
+    "hier",
+    "operational",
+    "operational_bc",
+    "cb_direct",
+    "cb_residual"
+  ],
+  "strategies": [
+    "original",
+    "drop_nonpositive",
+    "drop_gt3h",
+    "winsor_p01_p999"
+  ],
+  "cb_strategies": [
+    "original"
+  ],
+  "cb_strategy_fold": null,
+  "cb_iterations": null,
+  "save_models": false,
+  "resume": false,
+  "max_seconds": null,
+  "figures_only": true
+}

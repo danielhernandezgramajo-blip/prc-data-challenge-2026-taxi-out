@@ -1,0 +1,11 @@
+col_a,col_b,pct_iguales_(ambas_no_nulas)
+ADEP_mvt,ADEP_flt,100.0
+ADES_mvt,ADES_flt,98.59
+ADES_flt,ADES_FILED_flt,99.9
+AIRCRAFT_TYPE_mvt,AIRCRAFT_TYPE_flt,99.66
+FLIGHT_RULE_mvt,FLIGHT_RULE_flt,99.93
+SCHED_TIME_UTC_mvt,LOBT_flt,74.01
+SCHED_TIME_UTC_mvt,EOBT_1_flt,55.52
+LOBT_flt,EOBT_1_flt,70.03
+IOBT_flt,EOBT_1_flt,69.5
+ARVT_1_flt,ARVT_3_flt,0.07

@@ -1,0 +1,97 @@
+fold,strategy,model,fallback,pct_rows
+F1_jul,original,hierarchical_median,level1:ADEP_mvt + RUNWAY_mvt + hour_utc + AIRCRAFT_TYPE_mvt,85.92
+F1_jul,original,hierarchical_median,level2:ADEP_mvt + RUNWAY_mvt + hour_utc,11.876
+F1_jul,original,hierarchical_median,level3:ADEP_mvt + RUNWAY_mvt,2.184
+F1_jul,original,hierarchical_median,level4:ADEP_mvt,0.02
+F1_jul,original,hierarchical_median,level5:global,0.0
+F1_jul,drop_nonpositive,hierarchical_median,level1:ADEP_mvt + RUNWAY_mvt + hour_utc + AIRCRAFT_TYPE_mvt,85.92
+F1_jul,drop_nonpositive,hierarchical_median,level2:ADEP_mvt + RUNWAY_mvt + hour_utc,11.874
+F1_jul,drop_nonpositive,hierarchical_median,level3:ADEP_mvt + RUNWAY_mvt,2.187
+F1_jul,drop_nonpositive,hierarchical_median,level4:ADEP_mvt,0.02
+F1_jul,drop_nonpositive,hierarchical_median,level5:global,0.0
+F1_jul,drop_gt3h,hierarchical_median,level1:ADEP_mvt + RUNWAY_mvt + hour_utc + AIRCRAFT_TYPE_mvt,85.911
+F1_jul,drop_gt3h,hierarchical_median,level2:ADEP_mvt + RUNWAY_mvt + hour_utc,11.885
+F1_jul,drop_gt3h,hierarchical_median,level3:ADEP_mvt + RUNWAY_mvt,2.184
+F1_jul,drop_gt3h,hierarchical_median,level4:ADEP_mvt,0.02
+F1_jul,drop_gt3h,hierarchical_median,level5:global,0.0
+F1_jul,winsor_p01_p999,hierarchical_median,level1:ADEP_mvt + RUNWAY_mvt + hour_utc + AIRCRAFT_TYPE_mvt,85.92
+F1_jul,winsor_p01_p999,hierarchical_median,level2:ADEP_mvt + RUNWAY_mvt + hour_utc,11.876
+F1_jul,winsor_p01_p999,hierarchical_median,level3:ADEP_mvt + RUNWAY_mvt,2.184
+F1_jul,winsor_p01_p999,hierarchical_median,level4:ADEP_mvt,0.02
+F1_jul,winsor_p01_p999,hierarchical_median,level5:global,0.0
+F1_jul,original,operational_aobt3,sin AOBT_3 → mediana jerárquica,2.065
+F1_jul,drop_nonpositive,operational_aobt3,sin AOBT_3 → mediana jerárquica,2.065
+F1_jul,drop_gt3h,operational_aobt3,sin AOBT_3 → mediana jerárquica,2.065
+F1_jul,winsor_p01_p999,operational_aobt3,sin AOBT_3 → mediana jerárquica,2.065
+F1_jul,original,operational_aobt3_biascorr,sin AOBT_3 → mediana jerárquica,2.065
+F1_jul,drop_nonpositive,operational_aobt3_biascorr,sin AOBT_3 → mediana jerárquica,2.065
+F1_jul,drop_gt3h,operational_aobt3_biascorr,sin AOBT_3 → mediana jerárquica,2.065
+F1_jul,winsor_p01_p999,operational_aobt3_biascorr,sin AOBT_3 → mediana jerárquica,2.065
+F1_jul,drop_nonpositive,catboost_residual,sin AOBT_3 → mediana jerárquica,2.065
+F1_jul,drop_gt3h,catboost_residual,sin AOBT_3 → mediana jerárquica,2.065
+F1_jul,winsor_p01_p999,catboost_residual,sin AOBT_3 → mediana jerárquica,2.065
+F2_nov,original,hierarchical_median,level1:ADEP_mvt + RUNWAY_mvt + hour_utc + AIRCRAFT_TYPE_mvt,88.976
+F2_nov,original,hierarchical_median,level2:ADEP_mvt + RUNWAY_mvt + hour_utc,10.805
+F2_nov,original,hierarchical_median,level3:ADEP_mvt + RUNWAY_mvt,0.216
+F2_nov,original,hierarchical_median,level4:ADEP_mvt,0.004
+F2_nov,original,hierarchical_median,level5:global,0.0
+F2_nov,drop_nonpositive,hierarchical_median,level1:ADEP_mvt + RUNWAY_mvt + hour_utc + AIRCRAFT_TYPE_mvt,88.976
+F2_nov,drop_nonpositive,hierarchical_median,level2:ADEP_mvt + RUNWAY_mvt + hour_utc,10.801
+F2_nov,drop_nonpositive,hierarchical_median,level3:ADEP_mvt + RUNWAY_mvt,0.219
+F2_nov,drop_nonpositive,hierarchical_median,level4:ADEP_mvt,0.004
+F2_nov,drop_nonpositive,hierarchical_median,level5:global,0.0
+F2_nov,drop_gt3h,hierarchical_median,level1:ADEP_mvt + RUNWAY_mvt + hour_utc + AIRCRAFT_TYPE_mvt,88.973
+F2_nov,drop_gt3h,hierarchical_median,level2:ADEP_mvt + RUNWAY_mvt + hour_utc,10.801
+F2_nov,drop_gt3h,hierarchical_median,level3:ADEP_mvt + RUNWAY_mvt,0.223
+F2_nov,drop_gt3h,hierarchical_median,level4:ADEP_mvt,0.004
+F2_nov,drop_gt3h,hierarchical_median,level5:global,0.0
+F2_nov,winsor_p01_p999,hierarchical_median,level1:ADEP_mvt + RUNWAY_mvt + hour_utc + AIRCRAFT_TYPE_mvt,88.976
+F2_nov,winsor_p01_p999,hierarchical_median,level2:ADEP_mvt + RUNWAY_mvt + hour_utc,10.805
+F2_nov,winsor_p01_p999,hierarchical_median,level3:ADEP_mvt + RUNWAY_mvt,0.216
+F2_nov,winsor_p01_p999,hierarchical_median,level4:ADEP_mvt,0.004
+F2_nov,winsor_p01_p999,hierarchical_median,level5:global,0.0
+F2_nov,original,operational_aobt3,sin AOBT_3 → mediana jerárquica,0.835
+F2_nov,drop_nonpositive,operational_aobt3,sin AOBT_3 → mediana jerárquica,0.835
+F2_nov,drop_gt3h,operational_aobt3,sin AOBT_3 → mediana jerárquica,0.835
+F2_nov,winsor_p01_p999,operational_aobt3,sin AOBT_3 → mediana jerárquica,0.835
+F2_nov,original,operational_aobt3_biascorr,sin AOBT_3 → mediana jerárquica,0.835
+F2_nov,drop_nonpositive,operational_aobt3_biascorr,sin AOBT_3 → mediana jerárquica,0.835
+F2_nov,drop_gt3h,operational_aobt3_biascorr,sin AOBT_3 → mediana jerárquica,0.835
+F2_nov,winsor_p01_p999,operational_aobt3_biascorr,sin AOBT_3 → mediana jerárquica,0.835
+F2_nov,original,catboost_residual,sin AOBT_3 → mediana jerárquica,0.835
+F2_nov,drop_nonpositive,catboost_residual,sin AOBT_3 → mediana jerárquica,0.835
+F2_nov,drop_gt3h,catboost_residual,sin AOBT_3 → mediana jerárquica,0.835
+F2_nov,winsor_p01_p999,catboost_residual,sin AOBT_3 → mediana jerárquica,0.835
+F3_dec,original,hierarchical_median,level1:ADEP_mvt + RUNWAY_mvt + hour_utc + AIRCRAFT_TYPE_mvt,91.402
+F3_dec,original,hierarchical_median,level2:ADEP_mvt + RUNWAY_mvt + hour_utc,8.482
+F3_dec,original,hierarchical_median,level3:ADEP_mvt + RUNWAY_mvt,0.097
+F3_dec,original,hierarchical_median,level4:ADEP_mvt,0.019
+F3_dec,original,hierarchical_median,level5:global,0.0
+F3_dec,drop_nonpositive,hierarchical_median,level1:ADEP_mvt + RUNWAY_mvt + hour_utc + AIRCRAFT_TYPE_mvt,91.401
+F3_dec,drop_nonpositive,hierarchical_median,level2:ADEP_mvt + RUNWAY_mvt + hour_utc,8.474
+F3_dec,drop_nonpositive,hierarchical_median,level3:ADEP_mvt + RUNWAY_mvt,0.106
+F3_dec,drop_nonpositive,hierarchical_median,level4:ADEP_mvt,0.019
+F3_dec,drop_nonpositive,hierarchical_median,level5:global,0.0
+F3_dec,drop_gt3h,hierarchical_median,level1:ADEP_mvt + RUNWAY_mvt + hour_utc + AIRCRAFT_TYPE_mvt,91.398
+F3_dec,drop_gt3h,hierarchical_median,level2:ADEP_mvt + RUNWAY_mvt + hour_utc,8.486
+F3_dec,drop_gt3h,hierarchical_median,level3:ADEP_mvt + RUNWAY_mvt,0.097
+F3_dec,drop_gt3h,hierarchical_median,level4:ADEP_mvt,0.019
+F3_dec,drop_gt3h,hierarchical_median,level5:global,0.0
+F3_dec,winsor_p01_p999,hierarchical_median,level1:ADEP_mvt + RUNWAY_mvt + hour_utc + AIRCRAFT_TYPE_mvt,91.402
+F3_dec,winsor_p01_p999,hierarchical_median,level2:ADEP_mvt + RUNWAY_mvt + hour_utc,8.482
+F3_dec,winsor_p01_p999,hierarchical_median,level3:ADEP_mvt + RUNWAY_mvt,0.097
+F3_dec,winsor_p01_p999,hierarchical_median,level4:ADEP_mvt,0.019
+F3_dec,winsor_p01_p999,hierarchical_median,level5:global,0.0
+F3_dec,original,operational_aobt3,sin AOBT_3 → mediana jerárquica,0.995
+F3_dec,drop_nonpositive,operational_aobt3,sin AOBT_3 → mediana jerárquica,0.995
+F3_dec,drop_gt3h,operational_aobt3,sin AOBT_3 → mediana jerárquica,0.995
+F3_dec,winsor_p01_p999,operational_aobt3,sin AOBT_3 → mediana jerárquica,0.995
+F3_dec,original,operational_aobt3_biascorr,sin AOBT_3 → mediana jerárquica,0.995
+F3_dec,drop_nonpositive,operational_aobt3_biascorr,sin AOBT_3 → mediana jerárquica,0.995
+F3_dec,drop_gt3h,operational_aobt3_biascorr,sin AOBT_3 → mediana jerárquica,0.995
+F3_dec,winsor_p01_p999,operational_aobt3_biascorr,sin AOBT_3 → mediana jerárquica,0.995
+F3_dec,original,catboost_residual,sin AOBT_3 → mediana jerárquica,0.995
+F3_dec,drop_nonpositive,catboost_residual,sin AOBT_3 → mediana jerárquica,0.995
+F3_dec,drop_gt3h,catboost_residual,sin AOBT_3 → mediana jerárquica,0.995
+F3_dec,winsor_p01_p999,catboost_residual,sin AOBT_3 → mediana jerárquica,0.995
+F1_jul,original,catboost_residual,sin AOBT_3 → mediana jerárquica,2.065

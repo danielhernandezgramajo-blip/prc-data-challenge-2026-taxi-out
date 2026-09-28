@@ -1,0 +1,122 @@
+# PRC Data Challenge 2026 — Predicción del taxi-out time
+
+Pipeline reproducible para predecir `TAXITIME_SEC_mvt` (segundos de rodaje desde el
+*off-block* hasta el despegue) **solo para movimientos de salida** (`PHASE_mvt == "DEP"`)
+y generar una submission compatible con `submitting.parquet`.
+
+Estado: **Fases 1–5 completadas** (validación, EDA, preparación, baselines, backtesting
+temporal). Pendiente: submission (no se ha generado ninguna todavía).
+
+## Estructura
+
+```
+Aeropuertos Taxi time/
+├── *.parquet                 # 14 Parquet originales (INTACTOS; ver "Datos")
+├── data/raw/                 # ubicación alternativa para los Parquet (vacía por ahora)
+├── notebooks/01_eda.ipynb    # EDA ejecutable de principio a fin
+├── src/
+│   ├── config.py             # rutas relativas, columnas, folds, hiperparámetros, SEED=42
+│   ├── io_utils.py           # lectura (solo lectura) de los Parquet con Polars
+│   ├── validate_data.py      # FASE 1
+│   ├── eda.py / run_eda.py   # FASE 2
+│   ├── prepare_training.py   # FASE 3: build_features() + feature_audit.csv
+│   ├── modeling_utils.py     # métricas, estrategias de outliers, codec de categóricas
+│   ├── train_baseline.py     # FASE 4: medianas, baseline operacional, CatBoost directo/residual
+│   ├── backtest.py           # FASE 5: 3 backtests temporales × 4 estrategias de outliers
+│   └── make_report.py        # outputs/reports/modeling_report.md a partir de las tablas
+├── models/                   # modelos .cbm + predicciones de validación (excluido de git)
+├── outputs/{figures,tables,reports}/
+├── submissions/              # (vacía; excluida de git)
+├── requirements.txt
+├── .gitignore
+└── README.md
+```
+
+## Datos
+
+Los 14 Parquet (12 × `training_2025-*.parquet`, `ranking.parquet`, `submitting.parquet`)
+**se dejan donde están** (raíz de la carpeta) y solo se leen. `src/config.py` los busca en
+este orden: `$PRC_DATA_DIR` → `data/raw/` → raíz del proyecto. Ningún Parquet, modelo,
+credencial ni submission se sube a git (`.gitignore`).
+
+Nota técnica: los archivos fueron exportados desde R; `AIRCRAFT_OPERATOR_flt` lleva el tipo
+de extensión `arrow.r.vctrs`. Se carga como `string` fijando
+`POLARS_UNKNOWN_EXTENSION_TYPE_BEHAVIOR=load_as_storage` (lo hacen los scripts).
+
+## Instalación
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python -m ipykernel install --user --name python3
+```
+
+## Reproducir (todo con rutas relativas; se puede lanzar desde cualquier directorio)
+
+```bash
+# FASE 1 — validación (≈5 s) → outputs/reports/data_validation.md
+python src/validate_data.py
+
+# FASE 2 — EDA (≈10 s, ~2 GB RAM) → outputs/tables/*.csv, outputs/figures/*.png
+python src/run_eda.py
+jupyter nbconvert --to html --execute notebooks/01_eda.ipynb --output-dir outputs/reports --output eda_report.html
+
+# FASE 3 — features + auditoría (≈5 s) → outputs/tables/feature_audit.csv
+python src/prepare_training.py
+
+# FASE 5 — backtesting temporal (baselines + CatBoost directo y residual, 4 estrategias de outliers)
+#   ≈ 40 min con 4 CPU / 3 GB RAM. Escribe resultados de forma incremental; se puede cortar y reanudar:
+python src/backtest.py --cb-strategies original drop_nonpositive drop_gt3h winsor_p01_p999 --save-models
+python src/backtest.py --cb-strategies original drop_nonpositive drop_gt3h winsor_p01_p999 --save-models --resume   # reanudar
+python src/backtest.py --figures-only                                                                                # solo figuras
+#   → outputs/tables/backtest_metrics.csv, backtest_metrics_by_airport.csv, outlier_strategy_comparison.csv,
+#     fallback_coverage.csv, feature_importance.csv; outputs/figures/model_*.png, error_by_airport.png, …
+
+# Informe de modelado → outputs/reports/modeling_report.md
+python src/make_report.py
+
+# FASE 4 (opcional) — entrenar con todo 2025 y guardar en models/ (para la futura submission)
+python src/train_baseline.py --models hier operational cb_direct
+```
+
+## Diseño del modelado (resumen; detalle en `outputs/reports/modeling_report.md`)
+
+- **Features (29)**: calendario (mes, día de semana, hora, fin de semana, seno/coseno),
+  operacionales (`MVT_TIME − AOBT_3/EOBT_1/LOBT/IOBT/SCHED`, `AOBT_3 − SCHED`, `has_aobt3`),
+  congestión (salidas por aeropuerto-hora, aeropuerto-día, aeropuerto-pista-hora; llegadas por
+  aeropuerto-hora) y 10 categóricas. Una única función `build_features()` para training y ranking.
+- **Anti-leakage**: `BLOCK_TIME_UTC_mvt` no se lee; `MVT_ID_mvt` solo trazabilidad; cortes por
+  `MVT_TIME_UTC_mvt`; medianas, vocabularios y early stopping solo con el bloque de entrenamiento;
+  congestión sin target. Auditoría en `outputs/tables/feature_audit.csv`.
+- **Backtests**: ene–jun→jul, ene–oct→nov, ene–nov→dic (2025). Nunca aleatorios.
+- **Outliers**: 4 estrategias solo en entrenamiento; validación siempre contra el target original,
+  con métricas separadas para todas las filas, 0 < y ≤ 3 h y outliers.
+
+## Hallazgos clave
+
+- Training: 4 167 797 × 30 (2 085 047 DEP); ranking: 689 534 × 30 (344 841 DEP); submitting
+  alineado con ranking-DEP. `TAXITIME == MVT_TIME − BLOCK_TIME` exactamente.
+- Solo 10 aeropuertos de salida; el ranking contiene únicamente enero y julio de 2026.
+- **CatBoost directo** es el mejor modelo en los 3 backtests (RMSE medio ≈ 425 s, MAE ≈ 168 s)
+  frente a la mediana jerárquica (≈ 548 / 233) y a la baseline operacional `MVT − AOBT_3`
+  (≈ 563 / 250). El CatBoost residual empata en MAE pero pierde en RMSE.
+- El RMSE global lo dominan 25–85 filas por mes con taxi-out > 3 h (RMSE en esas filas ≈ 20 000 s);
+  en el 99.95 % restante el RMSE del CatBoost es de 230–370 s.
+
+## Decisiones documentadas
+
+| Decisión | Motivo |
+|---|---|
+| Parquet no se mueven a `data/raw/` | Evitar duplicados/pérdida; el código resuelve ambas ubicaciones |
+| Polars lazy, sin copia de features en disco | 4.2 M filas en < 2 GB de RAM; `load_features()` tarda 5 s |
+| `"NA"` / nulos en categóricas → `"UNK"` | Artefacto de exportación desde R; categoría explícita para CatBoost |
+| Codec entero para categóricas (train ∪ rank) | Códigos estables sin usar el target; categoría nueva → −1 |
+| `MIN_GROUP_N = 30` en la mediana jerárquica | Medianas de grupos pequeños son ruidosas |
+| Early stopping con los últimos 14 días del bloque de entrenamiento | Temporal; el mes de validación nunca se toca |
+| CatBoost moderado (1000 it., lr 0.1, depth 6, ctr complexity 1) | Cabe en 3 GB y < 3 min por ajuste |
+| Outliers no se eliminan en validación | La métrica del concurso se calcula sobre el target real |
+| `SEED = 42` en `config.py` | Reproducibilidad |
+
+## Próximos pasos
+
+Ver "Qué falta antes de la submission" en `outputs/reports/modeling_report.md`.

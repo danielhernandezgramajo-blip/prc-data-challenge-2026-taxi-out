@@ -1,0 +1,9 @@
+ADEP_mvt,"corr_spearman(dep_per_hour, median_taxi)"
+LTFM,0.372
+EHAM,0.045
+LFPG,0.25
+EGLL,0.505
+EDDF,0.333
+LEMD,0.101
+LEBL,0.438
+EDDM,0.09

@@ -1,0 +1,8 @@
+model,fold,quantile,abs_error_s,n_rows_above
+catboost_direct,F3_dec,0.5,111.0123291015625,82838
+catboost_direct,F3_dec,0.9,323.79344482421874,16568
+catboost_direct,F3_dec,0.95,429.8827880859371,8284
+catboost_direct,F3_dec,0.99,803.7687280273416,1657
+catboost_direct,F3_dec,0.995,1067.7910424804686,829
+catboost_direct,F3_dec,0.999,2243.0236123046557,166
+catboost_direct,F3_dec,1.0,67675.474609375,0

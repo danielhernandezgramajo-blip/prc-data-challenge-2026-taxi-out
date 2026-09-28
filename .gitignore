@@ -1,0 +1,52 @@
+# --- Datos (nunca al repositorio) ---
+*.parquet
+data/
+!data/raw/.gitkeep
+!data/README.md
+
+# --- Credenciales / secretos ---
+.env
+.env.*
+*.pem
+*.key
+*.json.secret
+credentials*
+secrets*
+*.token
+
+# --- Modelos y artefactos de entrenamiento ---
+models/
+models/backtest_predictions/
+*.npy
+*.cbm
+*.pkl
+*.joblib
+catboost_info/
+
+# --- Submissions (nunca al repositorio; se entregan por el canal del concurso) ---
+submissions/
+!submissions/.gitkeep
+
+# --- Pytest ---
+.pytest_cache/
+
+# --- Python / Jupyter ---
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+.venv-*/
+venv/
+*.egg-info/
+
+.claude/
+_to_delete/
+
+# --- SO / editores ---
+.DS_Store
+.vscode/
+.idea/
+.claude/settings.local.json
+
+# --- Salidas pesadas (las tablas CSV y figuras sí se versionan; el HTML es grande) ---
+outputs/reports/*.html

@@ -1,0 +1,40 @@
+variable,tipo,pct_nulos_train,pct_nulos_rank,cardinalidad_train,cardinalidad_rank,disponible_en_inferencia,riesgo_leakage,decision,motivo
+month,calendario,0.0,0.0,12,2,sí,NULO,incluir,Derivada de MVT_TIME_UTC_mvt.
+day_of_week,calendario,0.0,0.0,7,7,sí,NULO,incluir,Derivada de MVT_TIME_UTC_mvt.
+hour_utc,calendario,0.0,0.0,24,24,sí,NULO,incluir,Derivada de MVT_TIME_UTC_mvt.
+is_weekend,calendario,0.0,0.0,2,2,sí,NULO,incluir,Derivada de MVT_TIME_UTC_mvt.
+hour_sin,calendario,0.0,0.0,14,14,sí,NULO,incluir,Derivada de MVT_TIME_UTC_mvt.
+hour_cos,calendario,0.0,0.0,14,14,sí,NULO,incluir,Derivada de MVT_TIME_UTC_mvt.
+month_sin,calendario,0.0,0.0,8,2,sí,NULO,incluir,Derivada de MVT_TIME_UTC_mvt.
+month_cos,calendario,0.0,0.0,8,2,sí,NULO,incluir,Derivada de MVT_TIME_UTC_mvt.
+mvt_minus_aobt3,operacional,1.078,1.534,5088,3713,sí (98.9 % train / 98.5 % rank),ALTO (permitido),incluir,AOBT_3 es el off-block real a resolución de minuto reportado por A-CDM; ≈ target pero está en ranking.
+mvt_minus_eobt1,operacional,1.078,1.534,6563,5593,sí,BAJO,incluir,Planificado; fallback natural cuando falta AOBT_3 (mismo patrón de nulos).
+mvt_minus_lobt,operacional,1.078,1.534,7185,6093,sí,BAJO,incluir,Planificado (última EOBT).
+mvt_minus_iobt,operacional,1.078,1.534,7207,6101,sí,BAJO,incluir,Planificado (primera EOBT).
+mvt_minus_sched,operacional,0.0,0.0,20138,13094,sí (100 %),BAJO,incluir,Programado; única delta sin nulos.
+aobt3_minus_sched,operacional,1.078,1.534,8949,4460,sí,MEDIO,incluir,Retraso real de salida; deriva de AOBT_3.
+has_aobt3,operacional,0.0,0.0,2,2,sí,BAJO,incluir,Indicador de enlace con plan de vuelo; los extremos se concentran en has_aobt3 = 0.
+departures_per_airport_hour,congestión,0.0,0.0,78,77,sí (conteo de MVT_TIME en ranking),BAJO,incluir,Congestión; no usa target.
+departures_per_airport_day,congestión,0.0,0.0,551,348,sí,BAJO,incluir,Congestión diaria.
+departures_per_airport_runway_hour,congestión,0.002,0.001,55,52,sí,BAJO,incluir,Cola en la pista; no usa target.
+arrivals_per_airport_hour,congestión,0.0,0.0,78,74,sí (filas ARR del ranking),BAJO,incluir,Ocupación por llegadas; no usa target.
+ADEP_mvt,categórica,0.0,0.0,10,10,sí,BAJO,incluir,Aeropuerto de salida: factor dominante.
+ADES_mvt,categórica,0.006,0.004,1569,1106,sí,BAJO,incluir,Destino: proxy de ruta/tipo de vuelo; ~1.4 % de discrepancia con ADES_flt.
+RUNWAY_mvt,categórica,0.002,0.001,53,50,sí,BAJO,incluir,Pista; 'NA' → UNK.
+STAND_mvt,categórica,0.001,0.001,1900,1698,sí,BAJO,incluir,Stand: alta cardinalidad (≈2.7 k); 0.46 % de filas de ranking con stand no visto → UNK/hash.
+AIRCRAFT_TYPE_mvt,categórica,0.072,0.113,270,200,sí,BAJO,incluir,Tipo de aeronave (redundante con AIRCRAFT_TYPE_flt: 99.7 %).
+MARKET_SEGMENT_flt,categórica,1.078,1.534,9,9,sí,BAJO,incluir,Segmento de mercado.
+FLIGHT_TYPE_flt,categórica,1.078,1.534,6,6,sí,BAJO,incluir,Tipo de vuelo.
+WK_TBL_CAT_flt,categórica,1.081,1.538,5,5,sí,BAJO,incluir,Categoría de estela.
+AIRCRAFT_OPERATOR_flt,categórica,1.078,1.534,677,580,sí,BAJO,incluir,Operador (hash); 1.6 % de filas de ranking con operador no visto.
+FLIGHT_RULE_mvt,categórica,0.01,0.006,3,3,sí,BAJO,incluir,Reglas de vuelo.
+TAXITIME_SEC_mvt,numérica (target),,,,,no (nulo en ranking-DEP),TARGET,excluir,Es el objetivo.
+BLOCK_TIME_UTC_mvt,temporal,,,,,no (nulo en ranking-DEP),PROHIBIDO,excluir,Target = MVT_TIME − BLOCK_TIME exactamente.
+MVT_ID_mvt,identificador,,,,,sí,MEDIO (correlaciona con el tiempo),excluir (solo trazabilidad),Identificador.
+FLIGHT_ID_mvt,identificador,,,,,sí,MEDIO,excluir,Identificador creciente en el tiempo.
+FLIGHT_mvt / CALLSIGN_flt,categórica,,,,,sí,BAJO,excluir (por ahora),Cardinalidad muy alta; redundante con operador+ruta. Candidata a target encoding en fases posteriores.
+ADEP_flt / AIRCRAFT_TYPE_flt / FLIGHT_RULE_flt / ADES_FILED_flt,categórica,,,,,sí,BAJO,excluir,Redundantes (> 99.6 %) con sus homólogas _mvt / ADES_flt.
+ADES_flt,categórica,,,,,sí,BAJO,excluir,98.6 % igual a ADES_mvt; se usa ADES_mvt.
+ARVT_1_flt / ARVT_3_flt,temporal,,,,,sí,BAJO,excluir,Posteriores al despegue; solo informan de la duración del vuelo.
+PHASE_mvt,categórica,,,,,sí,NULO,excluir,Constante (= DEP) tras el filtro.
+MVT_TIME_UTC_mvt y demás marcas absolutas,temporal,,,,,sí,BAJO,excluir como valor absoluto,Solo se usan a través de deltas y calendario (evita extrapolar la tendencia temporal a 2026).
