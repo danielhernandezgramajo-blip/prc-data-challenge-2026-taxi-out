@@ -1,0 +1,36 @@
+# Versiones exactas del entorno en el que se ejecutaron backtests, pruebas y submission (Python 3.10.12, Linux x86_64).
+# Generado con: pip freeze | grep -iE '<paquetes del proyecto y dependencias>'
+# Nota: los modelos finales se entrenaron con catboost==1.2.10 y polars==1.44.2 en Python 3.11.15 (ver models/final/*/manifest.json).
+catboost==1.2.10
+contourpy==1.3.2
+cycler==0.12.1
+exceptiongroup==1.3.1
+fonttools==4.65.0
+graphviz==0.21
+iniconfig==2.3.0
+ipykernel==7.3.0
+joblib==1.6.0
+jupyter_client==8.10.0
+kiwisolver==1.5.1
+matplotlib==3.10.9
+nbconvert==7.17.1
+nbformat==5.11.1
+numpy==2.2.6
+packaging==26.3
+pandas==2.3.3
+pillow==12.3.0
+plotly==7.1.0
+pluggy==1.6.0
+polars==1.44.2
+pyarrow==25.0.1
+pyparsing==3.3.2
+pytest==9.1.1
+python-dateutil==2.9.0.post0
+pytz==2026.3.post1
+scikit-learn==1.7.2
+scipy==1.15.3
+seaborn==0.13.2
+six==1.17.0
+threadpoolctl==3.7.0
+tomli==2.4.1
+tzdata==2026.3

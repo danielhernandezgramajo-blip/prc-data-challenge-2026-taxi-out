@@ -4,8 +4,10 @@ Pipeline reproducible para predecir `TAXITIME_SEC_mvt` (segundos de rodaje desde
 *off-block* hasta el despegue) **solo para movimientos de salida** (`PHASE_mvt == "DEP"`)
 y generar una submission compatible con `submitting.parquet`.
 
-Estado: **Fases 1–5 completadas** (validación, EDA, preparación, baselines, backtesting
-temporal). Pendiente: submission (no se ha generado ninguna todavía).
+Estado: **Fases 1–5 completadas** + modelos finales (bundles reproducibles), pruebas
+automatizadas y una **submission candidata** (`submissions/candidate_v1.parquet`) generada y
+validada localmente. **No se ha subido nada al bucket del concurso.** Métrica oficial: **RMSE**.
+Licencia: GPL-3.0 (`LICENSE`).
 
 ## Estructura
 
@@ -22,9 +24,18 @@ Aeropuertos Taxi time/
 │   ├── prepare_training.py   # FASE 3: build_features() + feature_audit.csv
 │   ├── modeling_utils.py     # métricas, estrategias de outliers, codec de categóricas
 │   ├── train_baseline.py     # FASE 4: medianas, baseline operacional, CatBoost directo/residual
-│   ├── backtest.py           # FASE 5: 3 backtests temporales × 4 estrategias de outliers
+│   ├── backtest.py           # FASE 5: 3 backtests temporales × 4 estrategias de outliers (--resume/--repair/--audit)
+│   ├── select_model.py       # ensamble 50/50 vs directo con las predicciones de los folds → models/final/selection.json
+│   ├── make_submission.py    # bundles finales → submissions/candidate_v1.parquet (validado antes y después de escribir)
 │   └── make_report.py        # outputs/reports/modeling_report.md a partir de las tablas
-├── models/                   # modelos .cbm + predicciones de validación (excluido de git)
+├── tests/                    # pytest (9 pruebas): leakage, esquema, codec, bundle, folds, resume, submission
+├── models/                   # excluido de git
+│   ├── backtest/             # modelos de EVALUACIÓN (uno por fold × estrategia) — NO son finales
+│   ├── backtest_predictions/ # predicciones de validación (.npy) para figuras, ensamble y auditoría
+│   └── final/<modelo>/       # bundles finales: model.cbm + codec.json + manifest.json (+ fallback_*.parquet)
+├── submissions/              # candidate_v1.parquet + .json de validación (excluido de git; NO subido)
+├── requirements.txt / requirements-lock.txt
+├── LICENSE                   # GPL-3.0
 ├── outputs/{figures,tables,reports}/
 ├── submissions/              # (vacía; excluida de git)
 ├── requirements.txt
@@ -72,12 +83,33 @@ python src/backtest.py --figures-only                                           
 #   → outputs/tables/backtest_metrics.csv, backtest_metrics_by_airport.csv, outlier_strategy_comparison.csv,
 #     fallback_coverage.csv, feature_importance.csv; outputs/figures/model_*.png, error_by_airport.png, …
 
-# Informe de modelado → outputs/reports/modeling_report.md
-python src/make_report.py
+# Auditoría / reparación de artefactos de backtest (sin reentrenar cuando es posible)
+python src/backtest.py --audit --save-models
+python src/backtest.py --repair --save-models
 
-# FASE 4 (opcional) — entrenar con todo 2025 y guardar en models/ (para la futura submission)
-python src/train_baseline.py --models hier operational cb_direct
+# Selección del modelo final (ensamble 50/50 vs directo; peso fijo, sin optimizar sobre los folds)
+python src/select_model.py --strategy drop_nonpositive
+
+# Modelos finales: todas las filas válidas de 2025 (drop_nonpositive), iteraciones fijas elegidas con los backtests,
+# sin ventana de early stopping; bundle verificado (predicción antes de guardar == tras cargar). ≈ 8 min/modelo (2 CPU).
+python src/train_baseline.py --models cb_direct cb_residual --strategy drop_nonpositive
+
+# Submission candidata (NO la sube): carga bundles, features de ranking, ensamble, recorte ≥ 0, unión por MVT_ID_mvt,
+# orden y esquema de submitting.parquet, validación antes y después de escribir.
+python src/make_submission.py
+
+# Pruebas (≈ 10 s) e informe
+python -m pytest tests -q
+python src/make_report.py
 ```
+
+## Bundle reproducible (`models/final/<modelo>/`)
+
+`model.cbm` · `codec.json` (vocabulario completo del `CategoryCodec`, ajustado solo con training) ·
+`manifest.json` (orden exacto de features, categóricas, estrategia, iteraciones, seed, versiones de Python/Polars/pandas/NumPy/
+CatBoost, fecha, inventario con sha256 de los 14 Parquet, hiperparámetros, importancia) · `check_predictions.npz`
+(predicciones de verificación) · `fallback_level*.parquet` (solo residual). `ModelBundle.load()` reconstruye el modelo sin
+reentrenar y `ModelBundle.verify()` comprueba que predice exactamente lo mismo que antes de guardarse.
 
 ## Diseño del modelado (resumen; detalle en `outputs/reports/modeling_report.md`)
 
@@ -97,9 +129,12 @@ python src/train_baseline.py --models hier operational cb_direct
 - Training: 4 167 797 × 30 (2 085 047 DEP); ranking: 689 534 × 30 (344 841 DEP); submitting
   alineado con ranking-DEP. `TAXITIME == MVT_TIME − BLOCK_TIME` exactamente.
 - Solo 10 aeropuertos de salida; el ranking contiene únicamente enero y julio de 2026.
-- **CatBoost directo** es el mejor modelo en los 3 backtests (RMSE medio ≈ 425 s, MAE ≈ 168 s)
-  frente a la mediana jerárquica (≈ 548 / 233) y a la baseline operacional `MVT − AOBT_3`
-  (≈ 563 / 250). El CatBoost residual empata en MAE pero pierde en RMSE.
+- Variables ocultas en ranking-DEP: exactamente `BLOCK_TIME_UTC_mvt` y `TAXITIME_SEC_mvt`;
+  `MVT_TIME_UTC_mvt` y `AOBT_3_flt` sí están presentes y son la base de las features operacionales.
+- **CatBoost directo** es el mejor modelo individual en los 3 backtests (RMSE medio ≈ 422 s con
+  `drop_nonpositive`) frente a la mediana jerárquica (≈ 548) y a la baseline operacional (≈ 563).
+  El **ensamble 50/50 directo+residual** (peso fijado a priori) baja el RMSE medio a ≈ 420 s
+  (gana en 2 de 3 folds, menor varianza) y es el seleccionado para `candidate_v1`.
 - El RMSE global lo dominan 25–85 filas por mes con taxi-out > 3 h (RMSE en esas filas ≈ 20 000 s);
   en el 99.95 % restante el RMSE del CatBoost es de 230–370 s.
 
@@ -112,11 +147,20 @@ python src/train_baseline.py --models hier operational cb_direct
 | `"NA"` / nulos en categóricas → `"UNK"` | Artefacto de exportación desde R; categoría explícita para CatBoost |
 | Codec entero para categóricas (train ∪ rank) | Códigos estables sin usar el target; categoría nueva → −1 |
 | `MIN_GROUP_N = 30` en la mediana jerárquica | Medianas de grupos pequeños son ruidosas |
-| Early stopping con los últimos 14 días del bloque de entrenamiento | Temporal; el mes de validación nunca se toca |
+| Early stopping con los últimos 14 días del bloque de entrenamiento (solo backtests) | Temporal; el mes de validación nunca se toca |
+| Modelo final sin early stopping: 1000 iteraciones fijas = min(cap, ceil((max best_iteration+1)/100)·100) | F2/F3 llegaron al tope; la parada de F1 fue espuria (outliers en la ventana) |
+| Codec de categóricas ajustado solo con training; nuevas categorías → −1 | Sin fuga de información del ranking ni del target |
+| Ensamble 50/50 con peso fijo a priori | Evita optimizar pesos sobre los mismos folds que deciden |
+| Negativos recortados a 0 en la submission | Δ RMSE ≤ 0 en los tres backtests |
 | CatBoost moderado (1000 it., lr 0.1, depth 6, ctr complexity 1) | Cabe en 3 GB y < 3 min por ajuste |
 | Outliers no se eliminan en validación | La métrica del concurso se calcula sobre el target real |
 | `SEED = 42` en `config.py` | Reproducibilidad |
 
+## Git y elegibilidad
+
+Repositorio git local inicializado (sin remoto, sin push). `.gitignore` excluye Parquet, `data/`,
+`models/`, `submissions/`, `.env*`, credenciales, `*.npy`, `*.cbm`. Comprobado con `git ls-files`.
+
 ## Próximos pasos
 
-Ver "Qué falta antes de la submission" en `outputs/reports/modeling_report.md`.
+Ver la sección 9 de `outputs/reports/modeling_report.md`.

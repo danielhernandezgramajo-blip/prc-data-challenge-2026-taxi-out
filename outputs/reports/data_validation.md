@@ -1,6 +1,6 @@
 # Informe de validación de datos — PRC Data Challenge 2026
 
-Generado: 2026-09-28 02:26 UTC · script: `src/validate_data.py`
+Generado: 2026-09-28 22:03 UTC · script: `src/validate_data.py`
 
 
 ## 1. Inventario de archivos
