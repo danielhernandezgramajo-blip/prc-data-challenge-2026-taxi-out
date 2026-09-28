@@ -20,12 +20,17 @@
     "winsor_p01_p999"
   ],
   "cb_strategies": [
-    "original"
+    "original",
+    "drop_nonpositive",
+    "drop_gt3h",
+    "winsor_p01_p999"
   ],
   "cb_strategy_fold": null,
   "cb_iterations": null,
-  "save_models": false,
-  "resume": false,
+  "save_models": true,
+  "resume": true,
   "max_seconds": null,
-  "figures_only": true
+  "figures_only": false,
+  "repair": false,
+  "audit": false
 }

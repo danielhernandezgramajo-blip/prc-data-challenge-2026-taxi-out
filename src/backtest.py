@@ -184,8 +184,14 @@ def main() -> None:
     ap.add_argument("--audit", action="store_true", help="solo lista las unidades incompletas y sale")
     args = ap.parse_args()
     if args.audit:
-        a = audit_artifacts(require_model=args.save_models); print(json.dumps({"n_units": a["n_units"], "duplicates": a["duplicates"],
-              "incomplete": {"/".join(k): v for k, v in a["incomplete"].items()}}, indent=2, ensure_ascii=False)); return
+        a = audit_artifacts(require_model=args.save_models)
+        man = audit_manifest(require_model=args.save_models)
+        print(json.dumps({"n_units": a["n_units"], "duplicates": a["duplicates"],
+                          "incomplete": {"/".join(k): v for k, v in a["incomplete"].items()},
+                          "manifest": man}, indent=2, ensure_ascii=False))
+        ok = not a["incomplete"] and all(v == 0 for v in a["duplicates"].values()) and man["consistent"]
+        print("AUDITORÍA:", "OK" if ok else "INCONSISTENTE")
+        raise SystemExit(0 if ok else 1)
     if args.figures_only:
         finalize(args, write_manifest=False); return
     if args.repair:
@@ -385,6 +391,48 @@ def repair_units(args) -> None:
         pl.DataFrame(fi_rows).write_csv(TABLES_DIR / "feature_importance.csv")
     after = audit_artifacts(require_model=args.save_models)
     print("--repair: incompletas tras reparar:", after["incomplete"], "| duplicados:", after["duplicates"])
+
+
+def audit_manifest(require_model: bool = True) -> dict:
+    """Comprueba que backtest_run_args.json (manifiesto de la corrida de entrenamiento) sea coherente con los
+    artefactos observados: estrategias presentes, estrategias de CatBoost presentes, modelos guardados cuando
+    se exige --save-models, y que no sea un manifiesto de --figures-only (esa opción nunca debe escribirlo)."""
+    path = TABLES_DIR / "backtest_run_args.json"
+    out = {"exists": path.exists(), "issues": []}
+    if not path.exists():
+        out["issues"].append("no existe backtest_run_args.json"); out["consistent"] = False; return out
+    man = json.loads(path.read_text(encoding="utf-8"))
+    metrics = pl.read_csv(TABLES_DIR / "backtest_metrics.csv")
+    name_of = {k: MODEL_REGISTRY[k]().name for k in MODEL_REGISTRY}
+    cb_names = {name_of[k] for k in CATBOOSTS}
+    obs_strats = sorted(metrics.filter(~pl.col("model").is_in(cb_names))["strategy"].unique().to_list())
+    obs_cb_strats = sorted(metrics.filter(pl.col("model").is_in(cb_names))["strategy"].unique().to_list())
+    obs_folds = sorted(metrics["fold"].unique().to_list())
+    obs_models = sorted({k for k, n in name_of.items() if n in set(metrics["model"].to_list())})
+    out["observed"] = {"strategies": obs_strats, "cb_strategies": obs_cb_strats, "folds": obs_folds, "models": obs_models}
+    out["manifest"] = {k: man.get(k) for k in ("strategies", "cb_strategies", "cb_strategy_fold", "folds", "models", "save_models", "resume", "figures_only")}
+    if man.get("figures_only"):
+        out["issues"].append("el manifiesto proviene de --figures-only: no es un manifiesto de corrida de entrenamiento")
+    if sorted(man.get("strategies") or []) != obs_strats:
+        out["issues"].append(f"estrategias del manifiesto {sorted(man.get('strategies') or [])} != observadas {obs_strats}")
+    man_cb = set(man.get("cb_strategies") or [])
+    if man.get("cb_strategy_fold"):
+        man_cb |= set(OUTLIER_STRATEGIES)
+    if sorted(man_cb) != obs_cb_strats:
+        out["issues"].append(f"estrategias CatBoost del manifiesto {sorted(man_cb)} != observadas {obs_cb_strats}")
+    if sorted(man.get("folds") or []) != obs_folds:
+        out["issues"].append(f"folds del manifiesto {sorted(man.get('folds') or [])} != observados {obs_folds}")
+    if sorted(man.get("models") or []) != obs_models:
+        out["issues"].append(f"modelos del manifiesto {sorted(man.get('models') or [])} != observados {obs_models}")
+    cb_units = metrics.filter(pl.col("model").is_in(cb_names)).select("fold", "strategy", "model").unique()
+    n_saved = sum((MODELS_DIR / "backtest" / f"{r['model']}__{r['fold']}__{r['strategy']}.cbm").exists() for r in cb_units.iter_rows(named=True))
+    out["models_saved"] = f"{n_saved}/{cb_units.height}"
+    if require_model and not man.get("save_models"):
+        out["issues"].append("se exige --save-models pero el manifiesto dice save_models=false")
+    if man.get("save_models") and n_saved != cb_units.height:
+        out["issues"].append(f"el manifiesto dice save_models=true pero solo existen {n_saved}/{cb_units.height} modelos")
+    out["consistent"] = not out["issues"]
+    return out
 
 
 def finalize(args, write_manifest: bool = True) -> None:

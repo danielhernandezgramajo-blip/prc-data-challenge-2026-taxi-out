@@ -33,12 +33,10 @@ Aeropuertos Taxi time/
 │   ├── backtest/             # modelos de EVALUACIÓN (uno por fold × estrategia) — NO son finales
 │   ├── backtest_predictions/ # predicciones de validación (.npy) para figuras, ensamble y auditoría
 │   └── final/<modelo>/       # bundles finales: model.cbm + codec.json + manifest.json (+ fallback_*.parquet)
+├── outputs/{figures,tables,reports}/
 ├── submissions/              # candidate_v1.parquet + .json de validación (excluido de git; NO subido)
 ├── requirements.txt / requirements-lock.txt
 ├── LICENSE                   # GPL-3.0
-├── outputs/{figures,tables,reports}/
-├── submissions/              # (vacía; excluida de git)
-├── requirements.txt
 ├── .gitignore
 └── README.md
 ```
@@ -145,11 +143,10 @@ reentrenar y `ModelBundle.verify()` comprueba que predice exactamente lo mismo q
 | Parquet no se mueven a `data/raw/` | Evitar duplicados/pérdida; el código resuelve ambas ubicaciones |
 | Polars lazy, sin copia de features en disco | 4.2 M filas en < 2 GB de RAM; `load_features()` tarda 5 s |
 | `"NA"` / nulos en categóricas → `"UNK"` | Artefacto de exportación desde R; categoría explícita para CatBoost |
-| Codec entero para categóricas (train ∪ rank) | Códigos estables sin usar el target; categoría nueva → −1 |
+| Codec entero para categóricas ajustado solo con el bloque de entrenamiento | Sin usar el target; categorías nuevas en validación/ranking → −1 |
 | `MIN_GROUP_N = 30` en la mediana jerárquica | Medianas de grupos pequeños son ruidosas |
 | Early stopping con los últimos 14 días del bloque de entrenamiento (solo backtests) | Temporal; el mes de validación nunca se toca |
 | Modelo final sin early stopping: 1000 iteraciones fijas = min(cap, ceil((max best_iteration+1)/100)·100) | F2/F3 llegaron al tope; la parada de F1 fue espuria (outliers en la ventana) |
-| Codec de categóricas ajustado solo con training; nuevas categorías → −1 | Sin fuga de información del ranking ni del target |
 | Ensamble 50/50 con peso fijo a priori | Evita optimizar pesos sobre los mismos folds que deciden |
 | Negativos recortados a 0 en la submission | Δ RMSE ≤ 0 en los tres backtests |
 | CatBoost moderado (1000 it., lr 0.1, depth 6, ctr complexity 1) | Cabe en 3 GB y < 3 min por ajuste |

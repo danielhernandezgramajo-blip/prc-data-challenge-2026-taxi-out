@@ -6,7 +6,8 @@ Pasos:
  2. Carga los bundles (ModelBundle.load) y verifica que la predicción tras cargar == la guardada al entrenar.
  3. Construye las features de ranking con la MISMA función que en training (build_features).
  4. Predice; aplica el ensamble 50/50 si fue el seleccionado; recorta negativos a 0 si los backtests lo avalan.
- 5. Une por MVT_ID_mvt (no por posición) con submitting.parquet y restaura EXACTAMENTE su orden.
+ 5. Valida los IDs de las predicciones (columnas, nulos, duplicados, faltantes, adicionales) y une por
+    MVT_ID_mvt (no por posición) con submitting.parquet restaurando EXACTAMENTE su orden.
  6. Preserva el esquema del template (MVT_ID_mvt: Float64, TAXITIME_SEC_mvt: Int32).
  7. Valida: 344 841 filas, IDs únicos, ni faltantes ni extra, cero nulos, valores finitos, esquema idéntico.
  8. Escribe submissions/candidate_v1.parquet, lo vuelve a abrir y repite TODAS las validaciones.
@@ -36,15 +37,42 @@ from prepare_training import load_features  # noqa: E402
 from train_baseline import ModelBundle  # noqa: E402
 
 
-def assemble_submission(pred_df: pl.DataFrame, template: pl.DataFrame) -> pl.DataFrame:
-    """pred_df: columnas [MVT_ID_mvt, pred (float)]. Devuelve un frame con el esquema y el ORDEN del template.
+def check_prediction_ids(pred_df: pl.DataFrame, template: pl.DataFrame, pred_col: str = "pred") -> dict:
+    """Valida `pred_df` ANTES de unirlo con el template. Lanza ValueError con las cantidades exactas.
 
-    La unión es por MVT_ID_mvt; el orden del template se restaura con un índice explícito, así que
+    Comprueba: columnas exactas [MVT_ID_mvt, pred_col]; sin IDs nulos; sin IDs duplicados; conjunto de IDs
+    idéntico al del template (faltantes y adicionales detectados con anti-joins, no solo por conteo)."""
+    expected_cols = {ID_COL, pred_col}
+    if set(pred_df.columns) != expected_cols:
+        raise ValueError(f"pred_df debe tener exactamente las columnas {sorted(expected_cols)}; tiene {pred_df.columns}")
+    n_null = int(pred_df[ID_COL].null_count())
+    if n_null:
+        raise ValueError(f"{n_null} IDs nulos en las predicciones")
+    n_dup = int(pred_df.height - pred_df[ID_COL].n_unique())
+    if n_dup:
+        raise ValueError(f"{n_dup} IDs duplicados en las predicciones")
+    if template[ID_COL].null_count() or template[ID_COL].n_unique() != template.height:
+        raise ValueError("el template tiene IDs nulos o duplicados")
+    ids_pred = pred_df.select(ID_COL); ids_tmpl = template.select(ID_COL)
+    n_missing = ids_tmpl.join(ids_pred, on=ID_COL, how="anti").height   # en el template, sin predicción
+    n_extra = ids_pred.join(ids_tmpl, on=ID_COL, how="anti").height     # con predicción, fuera del template
+    if n_missing or n_extra:
+        raise ValueError(f"los IDs de las predicciones no coinciden con el template: {n_missing} faltantes, {n_extra} adicionales")
+    return {"n": pred_df.height, "n_null_ids": n_null, "n_duplicate_ids": n_dup, "n_missing": n_missing, "n_extra": n_extra}
+
+
+def assemble_submission(pred_df: pl.DataFrame, template: pl.DataFrame) -> pl.DataFrame:
+    """pred_df: columnas exactamente [MVT_ID_mvt, pred (float)]. Devuelve un frame con el esquema y el ORDEN del template.
+
+    Primero `check_prediction_ids()` valida las predicciones (columnas, nulos, duplicados, faltantes y adicionales)
+    y lanza ValueError si hay cualquier diferencia: así ningún join puede descartar silenciosamente IDs de más.
+    Después la unión es por MVT_ID_mvt y el orden del template se restaura con un índice explícito, de modo que
     el resultado no depende del orden en que lleguen las predicciones."""
+    check_prediction_ids(pred_df, template)
     tmpl = template.select(ID_COL).with_row_index("_pos")
-    joined = tmpl.join(pred_df.select(ID_COL, "pred"), on=ID_COL, how="left").sort("_pos")
-    if joined["pred"].null_count():
-        raise ValueError(f"{joined['pred'].null_count()} IDs del template sin predicción")
+    joined = tmpl.join(pred_df.select(ID_COL, "pred"), on=ID_COL, how="inner").sort("_pos")
+    if joined.height != template.height or joined["pred"].null_count():
+        raise ValueError(f"unión inconsistente: {joined.height} filas de {template.height}, {joined['pred'].null_count()} nulos")
     target_dtype = template.schema[TARGET]
     out = joined.select(
         pl.col(ID_COL).cast(template.schema[ID_COL]),

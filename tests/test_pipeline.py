@@ -155,30 +155,56 @@ def test_resume_artifacts_consistent():
 
 # ---------------------------------------------------------------------------
 # 8. Alineación exacta de una submission con submitting.parquet
+#    Se verifica: (a) la unión es por MVT_ID_mvt y no por posición (predicciones barajadas → cada fila recibe la
+#    predicción de su id); (b) el orden y el esquema del resultado son los del template (Int32); (c) antes del join,
+#    assemble_submission() rechaza con ValueError: IDs faltantes, un ID inexistente en el template (adicional),
+#    IDs duplicados, IDs nulos y columnas incorrectas; (d) validate_submission() rechaza un archivo truncado;
+#    (e) ida y vuelta por Parquet; (f) si existe candidate_v1.parquet, pasa todas las validaciones y no fue subida.
 # ---------------------------------------------------------------------------
 def test_submission_alignment(rank_feats, tmp_path):
     from io_utils import read_submitting
-    from make_submission import assemble_submission, validate_submission
+    from make_submission import assemble_submission, check_prediction_ids, validate_submission
     template = read_submitting()
     rng = np.random.default_rng(0)
     pred = pl.DataFrame({ID_COL: rank_feats[ID_COL], "pred": rng.uniform(300, 2000, rank_feats.height)})
     shuffled = pred.sample(fraction=1.0, shuffle=True, seed=1)
+    info = check_prediction_ids(shuffled, template)
+    assert info == {"n": template.height, "n_null_ids": 0, "n_duplicate_ids": 0, "n_missing": 0, "n_extra": 0}
     sub = assemble_submission(shuffled, template)
     checks = validate_submission(sub, template)
     assert checks["ok"] and checks["order_identical"] and checks["schema_ok"]
     assert sub.schema[TARGET] == template.schema[TARGET] == pl.Int32
-    # la unión es por id: la predicción de cada fila coincide con la de su id, no con la posición
+    # (a) la unión es por id: la predicción de cada fila coincide con la de su id, no con la posición
     j = sub.join(pred, on=ID_COL, how="left")
     assert bool((j[TARGET] == j["pred"].round(0).cast(pl.Int32)).all())
-    # se detectan ids faltantes / de más
-    with pytest.raises(ValueError):
+    # (c1) IDs faltantes → ValueError con la cantidad exacta
+    with pytest.raises(ValueError, match=r"343841 faltantes, 0 adicionales"):
         assemble_submission(pred.head(1000), template)
+    # (c2) un ID inexistente en el template (adicional) → ValueError aunque el resto esté completo
+    fake_id = float(pred[ID_COL].max() + 1_000_000)
+    with_extra = pl.concat([pred, pl.DataFrame({ID_COL: [fake_id], "pred": [900.0]}, schema=pred.schema)])
+    with pytest.raises(ValueError, match=r"0 faltantes, 1 adicionales"):
+        assemble_submission(with_extra, template)
+    # (c3) IDs duplicados → ValueError
+    with_dup = pl.concat([pred, pred.head(3)])
+    with pytest.raises(ValueError, match=r"3 IDs duplicados"):
+        assemble_submission(with_dup, template)
+    # (c4) IDs nulos → ValueError
+    with_null = pred.with_columns(pl.when(pl.arange(0, pl.len()) < 2).then(None).otherwise(pl.col(ID_COL)).alias(ID_COL))
+    with pytest.raises(ValueError, match=r"2 IDs nulos"):
+        assemble_submission(with_null, template)
+    # (c5) columnas incorrectas → ValueError
+    with pytest.raises(ValueError, match=r"exactamente las columnas"):
+        assemble_submission(pred.rename({"pred": "prediction"}), template)
+    with pytest.raises(ValueError, match=r"exactamente las columnas"):
+        assemble_submission(pred.with_columns(pl.lit(1).alias("extra")), template)
+    # (d) validate_submission rechaza un archivo truncado
     with pytest.raises(AssertionError):
         validate_submission(sub.head(1000), template)
-    # ida y vuelta por Parquet
+    # (e) ida y vuelta por Parquet
     sub.write_parquet(tmp_path / "s.parquet")
     assert validate_submission(pl.read_parquet(tmp_path / "s.parquet"), template)["ok"]
-    # si existe la candidata real, también debe pasar
+    # (f) si existe la candidata real, también debe pasar y no haber sido subida
     cand = ROOT / "submissions" / "candidate_v1.parquet"
     if cand.exists():
         c = validate_submission(pl.read_parquet(cand), template)
