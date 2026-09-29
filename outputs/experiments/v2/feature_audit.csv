@@ -1,0 +1,46 @@
+variable,usada_en,origen,usa_target,usa_BLOCK_TIME,disponible_en_ranking,estado
+month,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+day_of_week,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+hour_utc,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+is_weekend,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+hour_sin,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+hour_cos,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+month_sin,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+month_cos,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+mvt_minus_aobt3,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+mvt_minus_eobt1,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+mvt_minus_lobt,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+mvt_minus_iobt,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+mvt_minus_sched,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+aobt3_minus_sched,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+has_aobt3,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+departures_per_airport_hour,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+departures_per_airport_day,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+departures_per_airport_runway_hour,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+arrivals_per_airport_hour,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+ADEP_mvt,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+ADES_mvt,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+RUNWAY_mvt,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+STAND_mvt,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+AIRCRAFT_TYPE_mvt,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+MARKET_SEGMENT_flt,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+FLIGHT_TYPE_flt,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+WK_TBL_CAT_flt,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+AIRCRAFT_OPERATOR_flt,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+FLIGHT_RULE_mvt,"S_mix (clasificador, direct_normal, residual_V1)",features V1 (prepare_training),false,false,true,usada
+regime_class (etiqueta),SOLO como etiqueta de entrenamiento del clasificador y filtro de direct_normal,"derivada del target del bloque de ENTRENAMIENTO: |y − (MVT−SCHED)| ≤ 10 s; y − 86 400 ∈ [0, 3 h]",true,false,false,etiqueta (no feature)
+mvt_minus_sched (en la mezcla),valor de la rama clase 1: p1·(MVT − SCHED),MVT_TIME_UTC_mvt − SCHED_TIME_UTC_mvt,false,false,true,usada
+dep_pm15,A_surface (implementada y probada; NO entrenada en esta etapa por coste),v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,no probada
+dep_pm30,A_surface (implementada y probada; NO entrenada en esta etapa por coste),v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,no probada
+rwy_prev10,A_surface (implementada y probada; NO entrenada en esta etapa por coste),v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,no probada
+rwy_prev15,A_surface (implementada y probada; NO entrenada en esta etapa por coste),v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,no probada
+rwy_prev30,A_surface (implementada y probada; NO entrenada en esta etapa por coste),v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,no probada
+arr_pm15,A_surface (implementada y probada; NO entrenada en esta etapa por coste),v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,no probada
+arr_pm30,A_surface (implementada y probada; NO entrenada en esta etapa por coste),v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,no probada
+net_pm15,A_surface (implementada y probada; NO entrenada en esta etapa por coste),v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,no probada
+net_pm30,A_surface (implementada y probada; NO entrenada en esta etapa por coste),v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,no probada
+min_since_prev_rwy_dep,A_surface (implementada y probada; NO entrenada en esta etapa por coste),v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,no probada
+min_to_next_rwy_sched,A_surface (implementada y probada; NO entrenada en esta etapa por coste),v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,no probada
+rel_dep_pm30,A_surface (implementada y probada; NO entrenada en esta etapa por coste),v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,no probada
+rel_dep_hour,A_surface (implementada y probada; NO entrenada en esta etapa por coste),v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,no probada
+apt_hour_dow,A_surface (implementada y probada; NO entrenada en esta etapa por coste),v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,no probada

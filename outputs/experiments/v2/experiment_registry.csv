@@ -1,0 +1,8 @@
+candidate,family,definition,fits_reused
+V1P,baseline,"0.5*direct + 0.5*residual (v1_protocol, features V1, 1000 it., drop_nonpositive)",v1_protocol
+V1P_direct,baseline-component,catboost directo v1_protocol,v1_protocol
+V1P_residual,baseline-component,catboost residual v1_protocol (fallback mediana jerárquica sin AOBT_3),v1_protocol
+S_mix,S (mezcla por régimen),p0*normal + p1*(MVT-SCHED) + p2*(86400+normal); normal = 0.5*direct_normal + 0.5*residual,S_mixture + v1_protocol.residual
+S_mix_dn,S (mezcla por régimen),como S_mix con normal = direct_normal,S_mixture
+S_mix_onV1P,S (control),como S_mix con normal = V1P (regresor no depurado de extremos),S_mixture.proba + v1_protocol
+S_mix_floor,S + post-proceso,S_mix con suelo pred >= (MVT-AOBT_3) - 3600 s si hay AOBT_3,S_mixture + v1_protocol.residual

@@ -4,10 +4,10 @@ Pipeline reproducible para predecir `TAXITIME_SEC_mvt` (segundos de rodaje desde
 *off-block* hasta el despegue) **solo para movimientos de salida** (`PHASE_mvt == "DEP"`)
 y generar una submission compatible con `submitting.parquet`.
 
-Estado: **Fases 1–5 completadas** + modelos finales (bundles reproducibles), pruebas
-automatizadas y una **submission candidata** (`submissions/candidate_v1.parquet`) generada y
-validada localmente. **No se ha subido nada al bucket del concurso.** Métrica oficial: **RMSE**.
-Licencia: GPL-3.0 (`LICENSE`).
+Estado: **V1** (fases 1–5, bundles, pruebas, `submissions/candidate_v1.parquet`, congelada) y
+**V2 = S_mix** (`submissions/candidate_v2.parquet`, recomendada), evaluada con un protocolo de
+origen creciente de 8 folds y holdout de diciembre. **No se ha subido nada al bucket del
+concurso.** Métrica oficial: **RMSE**. Licencia: GPL-3.0 (`LICENSE`).
 
 ## Estructura
 
@@ -152,6 +152,44 @@ reentrenar y `ModelBundle.verify()` comprueba que predice exactamente lo mismo q
 | CatBoost moderado (1000 it., lr 0.1, depth 6, ctr complexity 1) | Cabe en 3 GB y < 3 min por ajuste |
 | Outliers no se eliminan en validación | La métrica del concurso se calcula sobre el target real |
 | `SEED = 42` en `config.py` | Reproducibilidad |
+
+## V2 — mezcla por régimen (S_mix)
+
+Hallazgo (`src/v2_tail_analysis.py`, `outputs/experiments/v2/tail_*.csv`): cuando el aeropuerto no
+registra el off-block real, `BLOCK_TIME_UTC_mvt` se rellena con `SCHED_TIME_UTC_mvt` y el target
+vale **exactamente** `MVT_TIME − SCHED_TIME` (100 049 filas de 2025; 170 de los 202 extremos > 3 h).
+Una segunda familia (17 filas, LIRF sin plan de vuelo) vale ≈ 86 400 s + taxi. Ambas son funciones
+de columnas presentes en ranking, así que V2 predice la esperanza condicional:
+
+    pred = p0·normal + p1·(MVT − SCHED) + p2·(86 400 + normal),  normal = 0.5·direct_normal + 0.5·residual_V1
+
+`p` = CatBoost binario sin pesos de clase (clase 1) + tasa suavizada por aeropuerto/has_aobt3 (clase 2);
+`direct_normal` = CatBoost directo (config V1) entrenado solo con taxi físico (clase 0, ≤ 3 h);
+`residual_V1` = bundle V1 sin cambios. Las etiquetas de régimen solo se calculan con el target del
+bloque de entrenamiento; validación y ranking nunca las ven.
+
+Protocolo (`src/v2_protocol.py`): folds may→nov (desarrollo) y dic (holdout, abierto una sola vez con
+la finalista congelada en `finalist_frozen.json`). Resultados (`outputs/experiments/v2/report.md`):
+
+| | V1 bajo protocolo | V2 S_mix |
+|---|---:|---:|
+| RMSE pooled desarrollo (may–nov) | 390.6 | **320.9** |
+| RMSE holdout diciembre | 332.2 | **241.1** |
+| MAE pooled / cobertura ≤ 5 min | 161.1 / 87.71 % | 159.3 / 87.80 % |
+| Folds y aeropuertos que mejoran | — | 7/7 · 10/10 |
+| Bootstrap pareado por bloques aeropuerto-día, P(mejora) | — | 1.000 (IC 95 % Δ: −94 a −43 s) |
+
+```bash
+python src/v2_tail_analysis.py                                             # análisis de regímenes (sin entrenar)
+python src/v2_protocol.py --variants v1_protocol S_mixture --resume        # 7 folds de desarrollo
+python src/v2_analysis.py                                                  # métricas, bootstrap, conformal, criterios
+python src/v2_protocol.py --variants v1_protocol S_mixture --folds Dec --resume && python src/v2_analysis.py --holdout
+python src/v2_final.py train && python src/v2_final.py submit             # bundles V2 + candidate_v2.parquet
+python src/v2_report.py
+```
+
+Implementadas y probadas pero no entrenadas en esta etapa (coste): features de congestión temporal
+`src/v2_features.py` (variante `A_surface`). V1 no se modifica: `candidate_v1.parquet` conserva su SHA-256.
 
 ## Git y elegibilidad
 

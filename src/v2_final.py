@@ -102,8 +102,9 @@ def cmd_train() -> None:
     print(f"regime_classifier: {clf.info} | verificación carga: {v}", flush=True)
     tr_n = train.filter((regime_class_expr() == 0) & (pl.col(TARGET) <= OUTLIER_HI_SEC))
     dn = make_model("direct_normal", FEATURE_NUM_COLS, FEATURE_CAT_COLS).fit(tr_n)
-    dn.name = "catboost_direct_normal"
-    man_d = ModelBundle(dn, STRATEGY, extra={"train_filter": "regime_class == 0 and y <= 10800", "n_train_rows_filtered": tr_n.height}).save(FINAL_DIR / "direct_normal", check)
+    # model_name se mantiene "catboost_direct" (lo que ModelBundle.load sabe reconstruir); el papel se documenta en `role`
+    man_d = ModelBundle(dn, STRATEGY, extra={"role": "direct_normal", "train_filter": "regime_class == 0 and y <= 10800",
+                                             "n_train_rows_filtered": tr_n.height}).save(FINAL_DIR / "direct_normal", check)
     vd = ModelBundle.verify(FINAL_DIR / "direct_normal", rank); assert vd["ok"] and vd["sha256_match"], vd
     print(f"direct_normal: {man_d['iterations']} árboles, {tr_n.height:,} filas | verificación: {vd}", flush=True)
     vr = ModelBundle.verify(V1_RESIDUAL, rank); assert vr["ok"] and vr["sha256_match"], vr

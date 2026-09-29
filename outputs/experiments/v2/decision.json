@@ -1,0 +1,52 @@
+{
+  "decision": "CREAR V2 (S_mix) — sustituye a V1 como recomendación; V1 se conserva intacta como baseline",
+  "reason": "Desarrollo pooled (may–nov): RMSE 390.6 → 320.9 (−69.7 s), 7/7 folds y 10/10 aeropuertos mejoran, MAE 161.1 → 159.3, cobertura ≤5 min 87.71 → 87.80 %, bootstrap P(mejora)=1.000. Holdout diciembre (abierto una vez): RMSE 332.2 → 241.1 (−91.0 s), MAE 152.4 → 150.6, cobertura ≤5 min 88.82 → 88.86 %, negativos 17 → 2. Único criterio no superado formalmente: c8 (la ganancia se concentra en las filas del régimen bloque=hora programada), por construcción; se acepta con esa salvedad porque la mejora es consistente en todos los folds y aeropuertos y también en la población normal.",
+  "dev_pooled": {
+    "V1P": {
+      "rmse": 390.57824337626334,
+      "mae": 161.14060188677334,
+      "medae": 111.83004760742188,
+      "cov_le300": 87.71372529139484,
+      "cov_le600": 97.75556760087194,
+      "cov_le900": 99.16011215142782,
+      "rmse_normal": 262.302773754441,
+      "rmse_extreme": 26658.99145297646,
+      "n_pred_negative": 103
+    },
+    "S_mix": {
+      "rmse": 320.9037778872554,
+      "mae": 159.32419864301164,
+      "medae": 111.37163888861642,
+      "cov_le300": 87.80208938577985,
+      "cov_le600": 97.80415615409512,
+      "cov_le900": 99.1833535460675,
+      "rmse_normal": 259.37016444410233,
+      "rmse_extreme": 17401.414119576508,
+      "n_pred_negative": 69
+    }
+  },
+  "holdout_Dec": {
+    "V1P": {
+      "rmse": 332.1554978005956,
+      "mae": 152.3576027867061,
+      "medae": 107.5546875,
+      "cov_le300": 88.82282996432818,
+      "cov_le600": 98.12043916777827,
+      "cov_le900": 99.32941808458628,
+      "rmse_normal": 237.713326939642,
+      "rmse_extreme": 27255.207838076272,
+      "n_pred_negative": 17
+    },
+    "S_mix": {
+      "rmse": 241.10628342444832,
+      "mae": 150.58371279605572,
+      "medae": 107.59611019996203,
+      "cov_le300": 88.86447726600554,
+      "cov_le600": 98.14941120372774,
+      "cov_le900": 99.33605750949135,
+      "rmse_normal": 233.63545120649928,
+      "rmse_extreme": 6981.494297373094,
+      "n_pred_negative": 2
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "folds": [
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec"
+  ],
+  "holdout_opened": true,
+  "candidates": [
+    "V1P",
+    "V1P_direct",
+    "V1P_residual",
+    "S_mix",
+    "S_mix_dn",
+    "S_mix_onV1P",
+    "S_mix_floor"
+  ],
+  "criteria": {
+    "min_rmse_gain_s": 3.0,
+    "min_cov5_gain_pp": 0.5,
+    "min_folds_not_worse": 5,
+    "max_fold_worsening_pct": 2.0,
+    "min_cov5_pooled": 87.0,
+    "min_cov5_each_fold": 85.0,
+    "min_p_improve": 0.87,
+    "n_boot": 1000
+  },
+  "at_utc": "2026-09-29T16:45:13+00:00"
+}
