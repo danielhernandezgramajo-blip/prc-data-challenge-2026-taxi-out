@@ -393,16 +393,18 @@ def repair_units(args) -> None:
     print("--repair: incompletas tras reparar:", after["incomplete"], "| duplicados:", after["duplicates"])
 
 
-def audit_manifest(require_model: bool = True) -> dict:
+def audit_manifest(require_model: bool = True, metrics: pl.DataFrame | None = None, manifest: dict | None = None) -> dict:
     """Comprueba que backtest_run_args.json (manifiesto de la corrida de entrenamiento) sea coherente con los
-    artefactos observados: estrategias presentes, estrategias de CatBoost presentes, modelos guardados cuando
-    se exige --save-models, y que no sea un manifiesto de --figures-only (esa opción nunca debe escribirlo)."""
+    artefactos observados: estrategias presentes, estrategias de CatBoost presentes, folds, modelos, modelos
+    guardados cuando se exige --save-models, que no sea un manifiesto de --figures-only y, sobre todo, que el
+    conjunto EXACTO de unidades (fold, strategy, model) esperado coincida con el observado en backtest_metrics.csv.
+    `metrics`/`manifest` permiten auditar copias en memoria (pruebas)."""
     path = TABLES_DIR / "backtest_run_args.json"
     out = {"exists": path.exists(), "issues": []}
     if not path.exists():
         out["issues"].append("no existe backtest_run_args.json"); out["consistent"] = False; return out
-    man = json.loads(path.read_text(encoding="utf-8"))
-    metrics = pl.read_csv(TABLES_DIR / "backtest_metrics.csv")
+    man = manifest if manifest is not None else json.loads(path.read_text(encoding="utf-8"))
+    metrics = metrics if metrics is not None else pl.read_csv(TABLES_DIR / "backtest_metrics.csv")
     name_of = {k: MODEL_REGISTRY[k]().name for k in MODEL_REGISTRY}
     cb_names = {name_of[k] for k in CATBOOSTS}
     obs_strats = sorted(metrics.filter(~pl.col("model").is_in(cb_names))["strategy"].unique().to_list())
@@ -431,8 +433,42 @@ def audit_manifest(require_model: bool = True) -> dict:
         out["issues"].append("se exige --save-models pero el manifiesto dice save_models=false")
     if man.get("save_models") and n_saved != cb_units.height:
         out["issues"].append(f"el manifiesto dice save_models=true pero solo existen {n_saved}/{cb_units.height} modelos")
+    # Conjunto EXACTO de unidades (fold, strategy, model) esperado por el manifiesto vs observado en las métricas.
+    # Las comparaciones marginales anteriores no detectan una combinación completa ausente.
+    expected = expected_units_from_manifest(man)
+    observed = {(r["fold"], r["strategy"], r["model"]) for r in metrics.select("fold", "strategy", "model").unique().iter_rows(named=True)}
+    fmt = lambda units: sorted("/".join(u) for u in units)  # noqa: E731
+    out["expected_units"] = len(expected); out["observed_units"] = len(observed)
+    out["missing_units"] = fmt(expected - observed)
+    out["unexpected_units"] = fmt(observed - expected)
+    if out["missing_units"]:
+        out["issues"].append(f"{len(out['missing_units'])} unidad(es) esperadas por el manifiesto sin métricas: {out['missing_units']}")
+    if out["unexpected_units"]:
+        out["issues"].append(f"{len(out['unexpected_units'])} unidad(es) observadas que el manifiesto no espera: {out['unexpected_units']}")
     out["consistent"] = not out["issues"]
     return out
+
+
+def expected_units_from_manifest(man: dict) -> set[tuple[str, str, str]]:
+    """Unidades (fold, strategy, model_name) que una corrida con estos argumentos debe producir:
+    baselines: folds × strategies × baselines; CatBoost: folds × cb_strategies × CatBoost, más TODAS las
+    estrategias (OUTLIER_STRATEGIES) para `cb_strategy_fold` si está definido (sin duplicados)."""
+    name_of = {k: MODEL_REGISTRY[k]().name for k in MODEL_REGISTRY}
+    folds = list(man.get("folds") or [])
+    models = list(man.get("models") or [])
+    strategies = list(man.get("strategies") or [])
+    cb_strategies = list(man.get("cb_strategies") or [])
+    units: set[tuple[str, str, str]] = set()
+    for key in models:
+        if key in CATBOOSTS:
+            for fold in folds:
+                strats = list(cb_strategies)
+                if man.get("cb_strategy_fold") == fold:
+                    strats = list(dict.fromkeys(strats + list(OUTLIER_STRATEGIES)))
+                units.update((fold, st, name_of[key]) for st in strats)
+        else:
+            units.update((fold, st, name_of[key]) for fold in folds for st in strategies)
+    return units
 
 
 def finalize(args, write_manifest: bool = True) -> None:

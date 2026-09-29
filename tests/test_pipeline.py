@@ -204,6 +204,16 @@ def test_submission_alignment(rank_feats, tmp_path):
     # (e) ida y vuelta por Parquet
     sub.write_parquet(tmp_path / "s.parquet")
     assert validate_submission(pl.read_parquet(tmp_path / "s.parquet"), template)["ok"]
+    # (g) serialización determinista: un solo chunk por columna y el mismo Parquet (byte a byte) aunque las
+    #     predicciones lleguen con distinta fragmentación física; orden, esquema y valores intactos
+    assert sub.n_chunks("all") == [1] * sub.width
+    fragmented = pl.concat([shuffled.slice(i, 50_000) for i in range(0, shuffled.height, 50_000)], rechunk=False)
+    assert fragmented.n_chunks() > 1
+    sub2 = assemble_submission(fragmented, template)
+    assert sub2.n_chunks("all") == [1] * sub2.width
+    sub2.write_parquet(tmp_path / "s2.parquet")
+    assert hashlib.sha256((tmp_path / "s.parquet").read_bytes()).hexdigest() == hashlib.sha256((tmp_path / "s2.parquet").read_bytes()).hexdigest()
+    assert sub2.equals(sub) and sub2.schema == template.schema and bool((sub2[ID_COL] == template[ID_COL]).all())
     # (f) si existe la candidata real, también debe pasar y no haber sido subida
     cand = ROOT / "submissions" / "candidate_v1.parquet"
     if cand.exists():
@@ -211,3 +221,34 @@ def test_submission_alignment(rank_feats, tmp_path):
         assert c["ok"] and c["n_negative"] == 0
         meta = json.loads(cand.with_suffix(".json").read_text(encoding="utf-8"))
         assert meta["uploaded_to_bucket"] is False
+
+
+# ---------------------------------------------------------------------------
+# 9. Auditoría del conjunto exacto de unidades (fold, strategy, model) del manifiesto
+# ---------------------------------------------------------------------------
+def test_audit_exact_units():
+    import backtest
+    manifest_path = TABLES_DIR / "backtest_run_args.json"
+    if not manifest_path.exists() or not (TABLES_DIR / "backtest_metrics.csv").exists():
+        pytest.skip("aún no hay una corrida de backtest")
+    man = json.loads(manifest_path.read_text(encoding="utf-8"))
+    metrics = pl.read_csv(TABLES_DIR / "backtest_metrics.csv")
+    # el manifiesto actual espera exactamente 84 unidades y las 84 observadas coinciden
+    assert len(backtest.expected_units_from_manifest(man)) == 84
+    a = backtest.audit_manifest(require_model=True, metrics=metrics, manifest=man)
+    assert a["expected_units"] == 84 and a["observed_units"] == 84
+    assert a["missing_units"] == [] and a["unexpected_units"] == [] and a["consistent"]
+    # una combinación completa eliminada en memoria → missing_units e inconsistente (aunque los marginales coincidan)
+    drop = (pl.col("fold") == "F1_jul") & (pl.col("strategy") == "drop_gt3h") & (pl.col("model") == "catboost_direct")
+    a2 = backtest.audit_manifest(require_model=True, metrics=metrics.filter(~drop), manifest=man)
+    assert a2["missing_units"] == ["F1_jul/drop_gt3h/catboost_direct"] and a2["unexpected_units"] == []
+    assert a2["observed_units"] == 83 and not a2["consistent"]
+    assert not any("!= observad" in i for i in a2["issues"]), "los marginales siguen coincidiendo; solo debe fallar el conjunto exacto"
+    # una combinación no esperada (F1_jul + drop_gt3h + global_median duplicada como estrategia inventada) → unexpected_units
+    extra = metrics.head(1).with_columns(pl.lit("F1_jul").alias("fold"), pl.lit("estrategia_inventada").alias("strategy"), pl.lit("global_median").alias("model"))
+    a3 = backtest.audit_manifest(require_model=True, metrics=pl.concat([metrics, extra], how="vertical_relaxed"), manifest=man)
+    assert a3["unexpected_units"] == ["F1_jul/estrategia_inventada/global_median"] and not a3["consistent"]
+    # cb_strategy_fold añade todas las estrategias solo a ese fold, sin duplicados
+    man2 = {**man, "cb_strategies": ["original"], "cb_strategy_fold": "F2_nov"}
+    exp2 = backtest.expected_units_from_manifest(man2)
+    assert len(exp2) == 60 + 3 * 1 * 2 + 3 * 2  # baselines + CatBoost original en 3 folds + 3 estrategias extra en F2 × 2 modelos

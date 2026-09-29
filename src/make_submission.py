@@ -8,7 +8,8 @@ Pasos:
  4. Predice; aplica el ensamble 50/50 si fue el seleccionado; recorta negativos a 0 si los backtests lo avalan.
  5. Valida los IDs de las predicciones (columnas, nulos, duplicados, faltantes, adicionales) y une por
     MVT_ID_mvt (no por posición) con submitting.parquet restaurando EXACTAMENTE su orden.
- 6. Preserva el esquema del template (MVT_ID_mvt: Float64, TAXITIME_SEC_mvt: Int32).
+ 6. Preserva el esquema del template (MVT_ID_mvt: Float64, TAXITIME_SEC_mvt: Int32) y normaliza el frame
+    con rechunk() para que la serialización Parquet (y su SHA-256) sea determinista.
  7. Valida: 344 841 filas, IDs únicos, ni faltantes ni extra, cero nulos, valores finitos, esquema idéntico.
  8. Escribe submissions/candidate_v1.parquet, lo vuelve a abrir y repite TODAS las validaciones.
 
@@ -78,7 +79,11 @@ def assemble_submission(pred_df: pl.DataFrame, template: pl.DataFrame) -> pl.Dat
         pl.col(ID_COL).cast(template.schema[ID_COL]),
         pl.col("pred").round(0).cast(target_dtype).alias(TARGET),
     )
-    return out
+    # Normalización física: un solo chunk por columna. El join deja el frame fragmentado en función de
+    # cómo llegaron las predicciones y Polars escribe un row group por chunk, de modo que dos submissions
+    # con valores idénticos producían Parquet (y SHA-256) distintos. rechunk() no altera valores, tipos,
+    # orden ni redondeo: solo hace determinista la serialización.
+    return out.rechunk()
 
 
 def validate_submission(sub: pl.DataFrame, template: pl.DataFrame) -> dict:
