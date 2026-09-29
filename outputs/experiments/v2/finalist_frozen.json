@@ -1,0 +1,14 @@
+{
+  "finalist": "S_mix",
+  "frozen_at_utc": "2026-09-29T12:00:00Z",
+  "definition": "pred = p0*normal + p1*(MVT_TIME - SCHED_TIME) + p2*(86400 + normal); normal = 0.5*direct_normal + 0.5*residual",
+  "components": {
+    "proba": "CatBoost Logloss binario (clase 1: |y - (MVT-SCHED)| <= 10 s), 300 it., lr 0.1, depth 6, sin pesos de clase, features V1; clase 2 = tasa suavizada por (aeropuerto, has_aobt3) con pseudo-recuento 200",
+    "direct_normal": "CatBoost directo RMSE 1000 it. (config V1) entrenado solo con filas de clase 0 y y <= 3 h",
+    "residual": "CatBoost residual de v1_protocol / bundle final V1 (models/final/catboost_residual), sin cambios"
+  },
+  "post_processing": "recorte de negativos a 0 (igual que V1); SIN suelo AOBT_3 (S_mix_floor descartada: mejora inconsistente entre folds)",
+  "selected_on": "7 folds de desarrollo (May-Nov 2025) pooled; diciembre no consultado antes de congelar",
+  "dev_pooled_rmse": {"V1P": 390.578, "S_mix": 320.904},
+  "rejected": {"S_mix_floor": "gana solo en julio (una fila), pierde <0.5 s en 5 folds", "S_mix_dn": "peor RMSE pooled que S_mix (324.8)", "S_mix_onV1P": "RMSE pooled equivalente pero peor MAE, cobertura y RMSE normal (regresor contaminado)"}
+}
