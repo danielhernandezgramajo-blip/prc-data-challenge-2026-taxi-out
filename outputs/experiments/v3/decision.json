@@ -20,5 +20,85 @@
     "candidate_v2_sha256_unchanged": "e1db051a419e18d7314b56fb5b8105c93170f99c4e4254b1aeab7f8fc7f84752",
     "uploaded_to_bucket": false
   },
-  "at_utc": "2026-09-30T16:32:01+00:00"
+  "at_utc": "2026-09-30T16:32:01+00:00",
+  "protocol_amendments": "outputs/experiments/v3/protocol_amendments.md (E1–E5; c8 = diagnóstico, no veto; política de subida)",
+  "gain_decomposition": {
+    "dev_pooled": {
+      "V1P": {
+        "rmse_all": 390.57824337626334,
+        "rmse_sin_celda_LIRF": 306.7902140815996,
+        "n_celda": 50,
+        "mse_share_celda_pct": 38.3049993208941
+      },
+      "S_mix": {
+        "rmse_all": 320.9037778872554,
+        "rmse_sin_celda_LIRF": 284.5682491126124,
+        "n_celda": 50,
+        "mse_share_celda_pct": 21.366738801179423
+      },
+      "S2A_mix": {
+        "rmse_all": 300.90813156207855,
+        "rmse_sin_celda_LIRF": 282.14280690627334,
+        "n_celda": 50,
+        "mse_share_celda_pct": 12.086983635042108
+      },
+      "S3A_mix": {
+        "rmse_all": 297.08556051623816,
+        "rmse_sin_celda_LIRF": 282.1518241941653,
+        "n_celda": 50,
+        "mse_share_celda_pct": 9.804327487791408
+      },
+      "S4A_mix": {
+        "rmse_all": 297.8229305558937,
+        "rmse_sin_celda_LIRF": 282.15175242627856,
+        "n_celda": 50,
+        "mse_share_celda_pct": 10.250445275991913
+      },
+      "A_mix": {
+        "rmse_all": 319.06667692561246,
+        "rmse_sin_celda_LIRF": 282.3337137806316,
+        "n_celda": 50,
+        "mse_share_celda_pct": 21.702905302640314
+      }
+    },
+    "holdout_Dec": {
+      "V1P": {
+        "rmse_all": 332.1554978005956,
+        "rmse_sin_celda_LIRF": 250.14417369732467,
+        "n_celda": 5,
+        "mse_share_celda_pct": 43.286717253206916
+      },
+      "S_mix": {
+        "rmse_all": 241.10628342444832,
+        "rmse_sin_celda_LIRF": 233.19434824431033,
+        "n_celda": 5,
+        "mse_share_celda_pct": 6.458166746807449
+      },
+      "S2A_mix": {
+        "rmse_all": 237.79323632043463,
+        "rmse_sin_celda_LIRF": 229.05671470410138,
+        "n_celda": 5,
+        "mse_share_celda_pct": 7.215815949300393
+      },
+      "S3A_mix": {
+        "rmse_all": 234.4496578176441,
+        "rmse_sin_celda_LIRF": 229.05685705851178,
+        "n_celda": 5,
+        "mse_share_celda_pct": 4.550362921202108
+      },
+      "S4A_mix": {
+        "rmse_all": 234.4496578176441,
+        "rmse_sin_celda_LIRF": 229.05685705851178,
+        "n_celda": 5,
+        "mse_share_celda_pct": 4.550362921202108
+      },
+      "A_mix": {
+        "rmse_all": 237.56859848171143,
+        "rmse_sin_celda_LIRF": 229.49137779012273,
+        "n_celda": 5,
+        "mse_share_celda_pct": 6.687125389625126
+      }
+    }
+  },
+  "leaderboard_result": null
 }

@@ -1,6 +1,6 @@
 # V3 (etapa 2 de V2) — Informe de experimentos (mismo protocolo de origen creciente, 8 folds)
 
-Generado 2026-09-30 16:40 UTC. Holdout de diciembre abierto (segunda apertura): **True**. Finalista congelada antes de abrirlo: **S2A_mix** (2026-09-29T23:45:59+00:00).
+Generado 2026-09-30 23:06 UTC. Holdout de diciembre abierto (segunda apertura): **True**. Finalista congelada antes de abrirlo: **S2A_mix** (2026-09-29T23:45:59+00:00).
 
 ## 1. Motivación: dónde estaba el error restante de S_mix (desarrollo, mayo–noviembre)
 
@@ -315,6 +315,25 @@ El c8 original de V2 ("la ganancia no depende de pocas filas": < 90 % de la redu
 inaplicable por construcción a una corrección de un régimen raro: cualquier arreglo de la cola lo incumple aunque sea real.
 En V3 se sustituye por **c8_no_harm_bulk**: el RMSE de la población normal (0 < y ≤ 3 h) no empeora más de 1 s y a lo sumo 2 de
 los 10 aeropuertos empeoran en RMSE pooled. El valor antiguo se sigue reportando (`c8_old_share_top50`) como información.
+
+
+### 9e. Apuesta frente a parte robusta (ganancia dentro y fuera de la celda LIRF con fecha desplazada)
+
+Concentración de la ganancia como diagnóstico (no como veto; ver `protocol_amendments.md`): RMSE frente a S_mix, total y
+excluyendo las filas de la celda LIRF (sin AOBT_3, fecha MVT > fecha SCHED).
+
+| conjunto | candidate | delta_rmse_total_s | delta_rmse_sin_celda_LIRF_s | delta_atribuible_a_la_celda_s | n_filas_celda | pct_MSE_en_celda |
+|---|---|---:|---:|---:|---:|---:|
+| dev_pooled | S2A_mix | -20.0 | -2.4 | -17.6 | 50 | 12.1 |
+| dev_pooled | S3A_mix | -23.8 | -2.4 | -21.4 | 50 | 9.8 |
+| dev_pooled | S4A_mix | -23.1 | -2.4 | -20.7 | 50 | 10.3 |
+| dev_pooled | A_mix | -1.8 | -2.2 | 0.4 | 50 | 21.7 |
+| holdout_Dec | S2A_mix | -3.3 | -4.1 | 0.8 | 5 | 7.2 |
+| holdout_Dec | S3A_mix | -6.7 | -4.1 | -2.5 | 5 | 4.6 |
+| holdout_Dec | S4A_mix | -6.7 | -4.1 | -2.5 | 5 | 4.6 |
+| holdout_Dec | A_mix | -3.5 | -3.7 | 0.2 | 5 | 6.7 |
+
+Registro formal de todas las desviaciones del protocolo original y política de subida: `protocol_amendments.md`.
 
 
 Elección final para `candidate_v3`: **S4A_mix** (post-hoc: True; finalista congelada por la regla prefijada: S2A_mix). Motivo: Hipótesis post-hoc (bandas de retraso dentro de la celda LIRF sin AOBT_3, nacida al abrir diciembre) con el parámetro elegido de forma anidada: el umbral (6/9/12/18/24 h o celda plana) se selecciona por log-loss leave-one-out SOLO con las filas de celda del bloque de entrenamiento de cada fold; diciembre nunca interviene en la elección del parámetro. Cumple todos los criterios requeridos en desarrollo (incl. c8 redefinido: no daña a la población normal ni a los aeropuertos) frente a S_mix y V1P: pooled 320,9 → 297,8 s, 7/7 folds, P(mejora)=1,000 (IC −36/−10). S3A_mix (umbral fijo 12 h elegido tras ver diciembre) queda como experimental; S2A_mix es la finalista rigurosamente defendible por la regla prefijada (300,9). Diciembre (234,4) no es validación limpia para S4A.

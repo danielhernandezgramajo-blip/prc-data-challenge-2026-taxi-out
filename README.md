@@ -228,9 +228,14 @@ Cambios (mismo protocolo de 8 folds; V2 intacta, sus componentes se reutilizan d
 | MAE / cobertura ≤ 5 min (desarrollo) | 161.1 / 87.71 % | 159.3 / 87.80 % | 156.8 / 88.16 % | 156.8 / 88.16 % | **156.8 / 88.16 %** |
 | Folds no peores que S_mix · bootstrap P(mejora) | — | — | 7/7 · 1.000 | 7/7 · 1.000 | 7/7 · 1.000 (IC 95 % Δ −36 a −10 s) |
 
-Escalera de riesgo para la subida: V1 (no apuesta por el artefacto) < V2 S_mix (referencia segura, confirmada) <
-S2A_mix (mejora confirmada por la regla prefijada) < S3A/S4A (experimentales; S4A es la mejor apuesta). Con todo 2025 el
+Apuesta frente a parte robusta (frente a S_mix): de los −23,1 s de S4A_mix en desarrollo, solo **−2,4 s** vienen de fuera
+de la celda LIRF (features de congestión; mejoran los 10 aeropuertos) y **−20,7 s** de 50 filas de la celda; en diciembre,
+−4,1 s fuera y −2,6 s dentro (5 filas). Escalera de riesgo: V1 (control conservador; apuesta implícita, se entrenó con los
+mismos targets) < V2 S_mix (apuesta moderada, confirmada) < S2A_mix (ampliación preseleccionada; mejora rigurosamente
+defendible) < S3A/S4A (apuesta agresiva y post-hoc en ~25 filas del ranking; S4A es la mejor apuesta). Con todo 2025 el
 umbral anidado coincide con 12 h, así que `candidate_v3.parquet` es byte-idéntica a la versión S3A (misma SHA-256).
+Todas las desviaciones del protocolo original (E1–E5), la decisión formal sobre c8 (diagnóstico, no veto) y la política de
+subida/leaderboard están en `outputs/experiments/v3/protocol_amendments.md`.
 
 Advertencias: la ganancia sigue concentrada en pocas filas (celda LIRF: 68 filas en 2025, **25 en el ranking**);
 depende de que el artefacto BLOCK = SCHED persista en 2026 (las llegadas del ranking, donde BLOCK_TIME es visible,

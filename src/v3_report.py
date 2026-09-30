@@ -123,6 +123,26 @@ inaplicable por construcción a una corrección de un régimen raro: cualquier a
 En V3 se sustituye por **c8_no_harm_bulk**: el RMSE de la población normal (0 < y ≤ 3 h) no empeora más de 1 s y a lo sumo 2 de
 los 10 aeropuertos empeoran en RMSE pooled. El valor antiguo se sigue reportando (`c8_old_share_top50`) como información.
 """)
+    gd = T / "gain_decomposition_lirf_cell.json"
+    if gd.exists():
+        g = json.loads(gd.read_text())
+        w("""
+### 9e. Apuesta frente a parte robusta (ganancia dentro y fuera de la celda LIRF con fecha desplazada)
+
+Concentración de la ganancia como diagnóstico (no como veto; ver `protocol_amendments.md`): RMSE frente a S_mix, total y
+excluyendo las filas de la celda LIRF (sin AOBT_3, fecha MVT > fecha SCHED).
+""")
+        rows = []
+        for setname in ("dev_pooled", "holdout_Dec"):
+            base = g[setname]["S_mix"]
+            for cand in ("S2A_mix", "S3A_mix", "S4A_mix", "A_mix"):
+                v = g[setname][cand]
+                rows.append({"conjunto": setname, "candidate": cand, "delta_rmse_total_s": round(v["rmse_all"] - base["rmse_all"], 1),
+                             "delta_rmse_sin_celda_LIRF_s": round(v["rmse_sin_celda_LIRF"] - base["rmse_sin_celda_LIRF"], 1),
+                             "delta_atribuible_a_la_celda_s": round((v["rmse_all"] - base["rmse_all"]) - (v["rmse_sin_celda_LIRF"] - base["rmse_sin_celda_LIRF"]), 1),
+                             "n_filas_celda": v["n_celda"], "pct_MSE_en_celda": round(v["mse_share_celda_pct"], 1)})
+        w(md_table(pl.DataFrame(rows)))
+    w("\nRegistro formal de todas las desviaciones del protocolo original y política de subida: `protocol_amendments.md`.\n")
     if fc:
         w(f"\nElección final para `candidate_v3`: **{fc['candidate']}** (post-hoc: {fc['post_hoc']}; finalista congelada por la regla prefijada: {fc['frozen_finalist']}). Motivo: {fc['reason']}\n")
     w("""
