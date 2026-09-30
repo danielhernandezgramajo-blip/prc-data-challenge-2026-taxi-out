@@ -1,0 +1,14 @@
+{
+  "candidate": "S3A_mix",
+  "post_hoc": true,
+  "frozen_finalist": "S2A_mix",
+  "reason": "Definida tras abrir diciembre (post-hoc): la celda plana reparte la masa de clase 2 a filas de retraso corto que casi nunca son de clase 2 (2025: 1/43 con retraso <12 h frente a 10/25 con >=12 h, Fisher p<0,001) y deja masa en p0 donde no hay filas normales; la versión jerárquica por banda de retraso (mismo alpha=20) domina a S2A_mix en los 8 folds (desarrollo pooled 297,1 frente a 300,9; diciembre 234,4 frente a 237,8) y cumple todos los criterios requeridos en desarrollo frente a S_mix y V1P. Diciembre no es validación limpia para esta variante.",
+  "passes_required_criteria_dev_vs": [
+    "S_mix",
+    "V1P"
+  ],
+  "holdout_opened_before_choice": true,
+  "definition": "proba2 celdas jerárquicas por banda (>=12 h), alpha=20 + normal_s",
+  "alpha": 20,
+  "at_utc": "2026-09-30T00:51:33+00:00"
+}

@@ -1,0 +1,27 @@
+{
+  "rule": "menor RMSE pooled de desarrollo entre las elegibles que cumplen todos los criterios requeridos frente a S_mix y V1P",
+  "eligible": [
+    "S2_mix",
+    "A_mix",
+    "A_mix_4",
+    "S2A_mix",
+    "S2A_mix_4"
+  ],
+  "passing": [
+    [
+      300.90813156207855,
+      "S2A_mix"
+    ],
+    [
+      300.9538197644514,
+      "S2A_mix_4"
+    ],
+    [
+      302.53186055998464,
+      "S2_mix"
+    ]
+  ],
+  "finalist": "S2A_mix",
+  "keep_candidate_v2_if_none": false,
+  "at_utc": "2026-09-30T00:51:33+00:00"
+}

@@ -27,14 +27,16 @@ Aeropuertos Taxi time/
 │   ├── backtest.py           # FASE 5: 3 backtests temporales × 4 estrategias de outliers (--resume/--repair/--audit)
 │   ├── select_model.py       # ensamble 50/50 vs directo con las predicciones de los folds → models/final/selection.json
 │   ├── make_submission.py    # bundles finales → submissions/candidate_v1.parquet (validado antes y después de escribir)
-│   └── make_report.py        # outputs/reports/modeling_report.md a partir de las tablas
-├── tests/                    # pytest (9 pruebas): leakage, esquema, codec, bundle, folds, resume, submission
+│   ├── make_report.py        # outputs/reports/modeling_report.md a partir de las tablas
+│   ├── v2_*.py               # V2: análisis de cola, protocolo 8 folds, features de congestión, mezcla por régimen
+│   └── v3_*.py               # V3 (etapa 2): clasificador con celdas de fecha desplazada, A_surface, candidate_v3
+├── tests/                    # pytest (20 pruebas): V1 (10), V2 (6), V3 (4)
 ├── models/                   # excluido de git
 │   ├── backtest/             # modelos de EVALUACIÓN (uno por fold × estrategia) — NO son finales
 │   ├── backtest_predictions/ # predicciones de validación (.npy) para figuras, ensamble y auditoría
 │   └── final/<modelo>/       # bundles finales: model.cbm + codec.json + manifest.json (+ fallback_*.parquet)
 ├── outputs/{figures,tables,reports}/
-├── submissions/              # candidate_v1.parquet + .json de validación (excluido de git; NO subido)
+├── submissions/              # candidate_v1/v2/v3.parquet + .json de validación (excluido de git; NO subido)
 ├── requirements.txt / requirements-lock.txt
 ├── LICENSE                   # GPL-3.0
 ├── .gitignore
@@ -188,8 +190,49 @@ python src/v2_final.py train && python src/v2_final.py submit             # bund
 python src/v2_report.py
 ```
 
-Implementadas y probadas pero no entrenadas en esta etapa (coste): features de congestión temporal
-`src/v2_features.py` (variante `A_surface`). V1 no se modifica: `candidate_v1.parquet` conserva su SHA-256.
+V1 no se modifica: `candidate_v1.parquet` conserva su SHA-256.
+
+## V3 — etapa 2 sobre V2 (S3A_mix)
+
+Motivación (`outputs/experiments/v3/report.md`, sección 1): del error cuadrático restante de S_mix en
+desarrollo, el 25 % estaba en **10 filas** de clase 2 (fecha del bloque desplazada un día) y el 16 % en la
+clase 1; un clasificador de régimen perfecto bajaría el RMSE pooled de 321 a 231 s. Mecanismo de la clase 2:
+en LIRF, sin AOBT_3 y con `fecha(MVT) > fecha(SCHED)`, el off-block se registra con la fecha del programado.
+
+Cambios (mismo protocolo de 8 folds; V2 intacta, sus componentes se reutilizan desde `models/experiments/v2/preds`):
+
+* **2a — clasificador de régimen** (`src/v3_protocol.py`, `RegimeClassifier2`): feature `days_after_sched`
+  (fecha MVT − fecha SCHED, ambas en ranking) y, en las celdas «desplazada ≥ 1 día y sin AOBT_3» por aeropuerto,
+  actualización bayesiana de p1/p2 con las cuentas del bloque de entrenamiento y pseudo-recuento α = 20 (prefijado;
+  0/5/100 solo como ablación/sensibilidad). La ablación «solo feature» da −1 s: la ganancia está en las celdas.
+* **2b — rama normal con congestión** (`A_surface`): `direct_normal_s` y `residual_normal_s` con features V1 +
+  `src/v2_features.py`, entrenados solo con clase 0 y y ≤ 3 h. Por sí solas −1,8 s (7/7 folds): las features horarias
+  de V1 ya capturaban casi toda la congestión; mejoran MAE (−2,3 s) y cobertura ≤ 5 min (+0,36 pp).
+* **2c — celdas jerárquicas por banda de retraso (post-hoc)**: al abrir diciembre con la finalista congelada
+  (S2A_mix) se vio que la celda plana reparte la masa de clase 2 a filas de retraso corto (en 2025: 1/43 con
+  retraso < 12 h frente a 10/25 con ≥ 12 h). `proba_b20` añade una segunda actualización por banda (≥ 12 h) con el
+  mismo α. Se definió DESPUÉS de abrir diciembre, así que diciembre no es validación limpia para ella; la elección
+  queda documentada en `final_choice.json` (la regla prefijada habría elegido S2A_mix).
+
+| RMSE (s) | V1P | S_mix (V2) | S2A_mix (regla prefijada) | **S3A_mix (candidate_v3)** |
+|---|---:|---:|---:|---:|
+| Desarrollo pooled (may–nov) | 390.6 | 320.9 | 300.9 | **297.1** |
+| Diciembre (segunda apertura) | 332.2 | 241.1 | 237.8 | **234.4** |
+| MAE / cobertura ≤ 5 min (desarrollo) | 161.1 / 87.71 % | 159.3 / 87.80 % | 156.8 / 88.16 % | **156.8 / 88.16 %** |
+| Folds no peores que S_mix · bootstrap P(mejora) | — | — | 7/7 · 1.000 | 7/7 · 1.000 (IC 95 % Δ −37 a −11 s) |
+
+Advertencias: la ganancia sigue concentrada en pocas filas (celda LIRF: 68 filas en 2025, **25 en el ranking**);
+depende de que el artefacto BLOCK = SCHED persista en 2026 (las llegadas del ranking, donde BLOCK_TIME es visible,
+lo muestran con la misma tasa que en 2025); una sola fila de 60 000 s de error mueve el RMSE final ≈ 20 s.
+
+```bash
+python src/v3_protocol.py --variants S2_mixture A_surface --resume            # 7 folds de desarrollo (≈ 2,5 h, 2 CPU)
+python src/v3_analysis.py --freeze                                            # criterios vs S_mix y V1P; congela la finalista
+python src/v3_protocol.py --variants S2_mixture A_surface --folds Dec --resume && python src/v3_analysis.py --holdout
+python src/v3_analysis.py --holdout --final-choice S3A_mix --reason "..."     # elección documentada (post-hoc)
+python src/v3_final.py train && python src/v3_final.py submit                # bundles V3 + candidate_v3.parquet
+python src/v3_report.py && python -m pytest tests -q
+```
 
 ## Git y elegibilidad
 

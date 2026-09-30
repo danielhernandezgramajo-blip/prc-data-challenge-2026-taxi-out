@@ -1,0 +1,46 @@
+variable,usada_en,origen,usa_target,usa_BLOCK_TIME,disponible_en_ranking,estado
+month,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+day_of_week,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+hour_utc,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+is_weekend,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+hour_sin,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+hour_cos,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+month_sin,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+month_cos,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+mvt_minus_aobt3,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+mvt_minus_eobt1,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+mvt_minus_lobt,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+mvt_minus_iobt,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+mvt_minus_sched,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+aobt3_minus_sched,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+has_aobt3,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+departures_per_airport_hour,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+departures_per_airport_day,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+departures_per_airport_runway_hour,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+arrivals_per_airport_hour,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+ADEP_mvt,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+ADES_mvt,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+RUNWAY_mvt,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+STAND_mvt,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+AIRCRAFT_TYPE_mvt,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+MARKET_SEGMENT_flt,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+FLIGHT_TYPE_flt,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+WK_TBL_CAT_flt,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+AIRCRAFT_OPERATOR_flt,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+FLIGHT_RULE_mvt,"clasificador etapa 2, direct_normal_s, residual_normal_s (+ componentes V2 reutilizados)",features V1 (prepare_training),false,false,true,usada
+days_after_sched,clasificador etapa 2 (feature) y clave de celdas/tabla de clase 2,fecha(MVT_TIME_UTC_mvt) − fecha(SCHED_TIME_UTC_mvt) en días (v3_protocol.date_shift_frame),false,false,true,usada
+"celdas (aeropuerto | desplazada ≥ 1 día, sin AOBT_3): n, k1, k2",actualización bayesiana de p1/p2 (α = 20),cuentas de clase del bloque de ENTRENAMIENTO,true,false,false,tabla ajustada en entrenamiento (como el codec o las medianas)
+dep_pm15,"direct_normal_s, residual_normal_s (A_surface)",v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,usada (etapa 2b)
+dep_pm30,"direct_normal_s, residual_normal_s (A_surface)",v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,usada (etapa 2b)
+rwy_prev10,"direct_normal_s, residual_normal_s (A_surface)",v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,usada (etapa 2b)
+rwy_prev15,"direct_normal_s, residual_normal_s (A_surface)",v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,usada (etapa 2b)
+rwy_prev30,"direct_normal_s, residual_normal_s (A_surface)",v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,usada (etapa 2b)
+arr_pm15,"direct_normal_s, residual_normal_s (A_surface)",v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,usada (etapa 2b)
+arr_pm30,"direct_normal_s, residual_normal_s (A_surface)",v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,usada (etapa 2b)
+net_pm15,"direct_normal_s, residual_normal_s (A_surface)",v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,usada (etapa 2b)
+net_pm30,"direct_normal_s, residual_normal_s (A_surface)",v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,usada (etapa 2b)
+min_since_prev_rwy_dep,"direct_normal_s, residual_normal_s (A_surface)",v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,usada (etapa 2b)
+min_to_next_rwy_sched,"direct_normal_s, residual_normal_s (A_surface)",v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,usada (etapa 2b)
+rel_dep_pm30,"direct_normal_s, residual_normal_s (A_surface)",v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,usada (etapa 2b)
+rel_dep_hour,"direct_normal_s, residual_normal_s (A_surface)",v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,usada (etapa 2b)
+apt_hour_dow,"direct_normal_s, residual_normal_s (A_surface)",v2_features: solo MVT_TIME/SCHED_TIME/ADEP/ADES/RUNWAY/PHASE,false,false,true,usada (etapa 2b)

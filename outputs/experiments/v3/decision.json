@@ -1,0 +1,16 @@
+{
+  "decision": "crear candidate_v3 (S3A_mix)",
+  "reason": "Etapa 2 sobre V2: clasificador de régimen con desplazamiento de fecha y celdas jerárquicas por banda de retraso (α = 20) + rama normal con features de congestión (direct_normal_s y residual_normal_s, filas de clase 0 ≤ 3 h). Desarrollo pooled (may–nov): S_mix 320,9 → S3A_mix 297,1 s (−23,8 s; 7/7 folds; P(mejora) = 1,000; IC 95 % Δ −37,2..−10,5); diciembre (segunda apertura, no limpia para S3A): 241,1 → 234,4 s. La finalista por la regla prefijada era S2A_mix (300,9 / 237,8); S3A_mix se definió tras abrir diciembre y se eligió de forma documentada (final_choice.json). V1 y candidate_v2 intactas.",
+  "frozen_finalist_by_rule": "S2A_mix",
+  "final_choice": "S3A_mix",
+  "post_hoc": true,
+  "candidate_v3": {
+    "file": "submissions/candidate_v3.parquet",
+    "sha256": "165c6e298a033d2ad96765e3ff3652615f20d6411a15ad6acd144b76ef920ee0",
+    "rows": 344841,
+    "candidate_v1_sha256_unchanged": "d482a42b3230d7e9eeba3890a66fc5ab4b9362d5e54a33c0151a265cfb5c4294",
+    "candidate_v2_sha256_unchanged": "e1db051a419e18d7314b56fb5b8105c93170f99c4e4254b1aeab7f8fc7f84752",
+    "uploaded_to_bucket": false
+  },
+  "at_utc": "2026-09-30T01:38:07+00:00"
+}

@@ -1,0 +1,16 @@
+candidate,family,definition,eligible
+V1P,referencia,0.5*direct + 0.5*residual (v1_protocol),false
+S_mix,referencia (candidate_v2),proba V2; normal_v2 = 0.5*direct_normal + 0.5*residual_V1,false
+S2_mix_a0,S2 (ablación),"proba2 alpha=0 (feature days_after_sched, sin celdas) + normal_v2",false
+S2_mix_a5,S2 (sensibilidad),proba2 alpha=5 + normal_v2,false
+S2_mix,S2 (primario),proba2 alpha=20 + normal_v2,true
+S2_mix_a100,S2 (sensibilidad),proba2 alpha=100 + normal_v2,false
+A_mix,A (superficie),proba V2 + normal_s = 0.5*direct_normal_s + 0.5*residual_normal_s,true
+A_mix_dn,A (información),proba V2 + direct_normal_s,false
+A_mix_rn,A (información),proba V2 + residual_normal_s,false
+A_mix_4,A (superficie),proba V2 + 0.25*(direct_normal + residual_V1 + direct_normal_s + residual_normal_s),true
+S2A_mix,S2+A,proba2 alpha=20 + normal_s,true
+S2A_mix_4,S2+A,proba2 alpha=20 + normal 4 componentes,true
+S3_mix,"S3 (2c, post-hoc)","proba2 celdas jerárquicas por banda de retraso (>=12 h), alpha=20 + normal_v2",false
+S3A_mix,"S3+A (2c, post-hoc)","proba2 celdas jerárquicas por banda (>=12 h), alpha=20 + normal_s",false
+S3A_mix_4,"S3+A (2c, post-hoc)","proba2 celdas jerárquicas por banda (>=12 h), alpha=20 + normal 4 componentes",false

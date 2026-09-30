@@ -1,0 +1,45 @@
+{
+  "folds": [
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec"
+  ],
+  "holdout_opened": true,
+  "candidates": [
+    "V1P",
+    "S_mix",
+    "S2_mix_a0",
+    "S2_mix_a5",
+    "S2_mix",
+    "S2_mix_a100",
+    "A_mix",
+    "A_mix_dn",
+    "A_mix_rn",
+    "A_mix_4",
+    "S2A_mix",
+    "S2A_mix_4",
+    "S3_mix",
+    "S3A_mix",
+    "S3A_mix_4"
+  ],
+  "criteria": {
+    "min_rmse_gain_s": 3.0,
+    "min_cov5_gain_pp": 0.5,
+    "min_folds_not_worse": 5,
+    "max_fold_worsening_pct": 2.0,
+    "min_cov5_pooled": 87.0,
+    "min_cov5_each_fold": 85.0,
+    "min_p_improve": 0.87,
+    "n_boot": 1000
+  },
+  "baselines": [
+    "S_mix",
+    "V1P"
+  ],
+  "at_utc": "2026-09-30T00:51:33+00:00"
+}
