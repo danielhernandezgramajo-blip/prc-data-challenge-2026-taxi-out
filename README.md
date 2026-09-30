@@ -36,7 +36,7 @@ Aeropuertos Taxi time/
 │   ├── backtest_predictions/ # predicciones de validación (.npy) para figuras, ensamble y auditoría
 │   └── final/<modelo>/       # bundles finales: model.cbm + codec.json + manifest.json (+ fallback_*.parquet)
 ├── outputs/{figures,tables,reports}/
-├── submissions/              # candidate_v1/v2/v3.parquet + .json de validación (excluido de git; NO subido)
+├── submissions/              # candidate_v1/v2/v3.parquet + .json; copias para subir optimistic-dragon_v1 (= candidate_v3) y _v2 (= candidate_v2); upload_manifest.json (excluido de git; NO subido)
 ├── requirements.txt / requirements-lock.txt
 ├── LICENSE                   # GPL-3.0
 ├── .gitignore
