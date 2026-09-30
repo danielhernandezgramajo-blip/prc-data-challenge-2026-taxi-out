@@ -1,9 +1,17 @@
 {
-  "decision": "crear candidate_v3 (S3A_mix)",
-  "reason": "Etapa 2 sobre V2: clasificador de régimen con desplazamiento de fecha y celdas jerárquicas por banda de retraso (α = 20) + rama normal con features de congestión (direct_normal_s y residual_normal_s, filas de clase 0 ≤ 3 h). Desarrollo pooled (may–nov): S_mix 320,9 → S3A_mix 297,1 s (−23,8 s; 7/7 folds; P(mejora) = 1,000; IC 95 % Δ −37,2..−10,5); diciembre (segunda apertura, no limpia para S3A): 241,1 → 234,4 s. La finalista por la regla prefijada era S2A_mix (300,9 / 237,8); S3A_mix se definió tras abrir diciembre y se eligió de forma documentada (final_choice.json). V1 y candidate_v2 intactas.",
+  "decision": "crear candidate_v3 (S4A_mix: hipótesis post-hoc con parámetro anidado)",
+  "reason": "Etapa 2 sobre V2. Finalista rigurosa por la regla prefijada: S2A_mix (celdas planas + congestión; desarrollo pooled 320,9 → 300,9 s; 7/7 folds; P(mejora)=1,000; cumple c1–c6, bootstrap y el c8 redefinido). S3A_mix (umbral fijo 12 h elegido tras abrir diciembre) se etiqueta EXPERIMENTAL/post-hoc. S4A_mix repite la hipótesis de bandas con el umbral elegido por log-loss leave-one-out dentro de cada ventana de entrenamiento (May–Aug y Dec: 12 h; Sep–Nov: 18 h; todo 2025: 12 h): desarrollo pooled 297,8 s (−23,1 vs S_mix; 7/7 folds; P(mejora)=1,000; IC −36/−10), cumple todos los criterios requeridos frente a S_mix y V1P. Diciembre (234,4) es segunda apertura y no valida la hipótesis. Con todo 2025 el umbral anidado coincide con 12 h, por lo que candidate_v3 es byte-idéntica a la generada con S3A_mix (misma sha256). V1 y candidate_v2 intactas. Nada subido al bucket.",
   "frozen_finalist_by_rule": "S2A_mix",
-  "final_choice": "S3A_mix",
+  "final_choice": "S4A_mix",
   "post_hoc": true,
+  "risk_ladder": [
+    "V1 (sin apuesta por el artefacto)",
+    "V2 S_mix (confirmada; referencia segura)",
+    "S2A_mix (mejora confirmada por la regla prefijada)",
+    "S3A_mix (experimental, umbral fijo post-hoc)",
+    "S4A_mix = candidate_v3 (experimental, parámetro anidado; mejor apuesta)"
+  ],
+  "band_sec_selected_all_2025": null,
   "candidate_v3": {
     "file": "submissions/candidate_v3.parquet",
     "sha256": "165c6e298a033d2ad96765e3ff3652615f20d6411a15ad6acd144b76ef920ee0",
@@ -12,5 +20,5 @@
     "candidate_v2_sha256_unchanged": "e1db051a419e18d7314b56fb5b8105c93170f99c4e4254b1aeab7f8fc7f84752",
     "uploaded_to_bucket": false
   },
-  "at_utc": "2026-09-30T01:38:07+00:00"
+  "at_utc": "2026-09-30T16:32:01+00:00"
 }

@@ -73,6 +73,22 @@ def test_regime_classifier2_cells(small_train):
         nb, kb1, kb2 = m.cells_band.get(("LIRF", band[i]), (0, 0, 0))
         assert abs(pb[i, 1] - (kb1 + 20 * exp1[i]) / (nb + 20)) < 1e-9 and abs(pb[i, 2] - (kb2 + 20 * exp2[i]) / (nb + 20)) < 1e-9
     assert sum(v[0] for k, v in m.cells_band.items() if k[0] == "LIRF") == n_c
+    # etapa 2d: selección anidada del umbral SOLO con filas de entrenamiento; "nested" reproduce "flat" o la banda elegida
+    from v3_protocol import BAND_GRID_H
+    loo = m.loo
+    assert set(loo["loo_logloss"]) == {"flat", *[f"band_{h}h" for h in BAND_GRID_H]} and loo["n_cell_rows"] >= n_c
+    assert loo["selected_h"] is None or loo["selected_h"] in BAND_GRID_H
+    pn = m.predict_proba(val, alpha=20, mode="nested")
+    if loo["selected_h"] is None:
+        assert np.allclose(pn, p20)
+    else:
+        assert loo["loo_logloss"][f"band_{loo['selected_h']}h"] < loo["loo_logloss"]["flat"]
+        sec = loo["selected_h"] * 3600.0; table = m.cells_band_grid[loo["selected_h"]]
+        band_sel = (val["mvt_minus_sched"].cast(pl.Float64).to_numpy()[:n] >= sec).astype(int)
+        for i in range(n):
+            nb, kb1, kb2 = table.get(("LIRF", band_sel[i]), (0, 0, 0))
+            assert abs(pn[i, 1] - (kb1 + 20 * exp1[i]) / (nb + 20)) < 1e-9 and abs(pn[i, 2] - (kb2 + 20 * exp2[i]) / (nb + 20)) < 1e-9
+    assert np.allclose(pn[~incell], p20[~incell])
 
 
 # ---------------------------------------------------------------------------
@@ -106,7 +122,7 @@ def test_v3_artifacts_consistent():
         assert m.filter(pl.col("fold") == HOLDOUT_FOLD).height == 0
     for f in DEV_FOLDS:
         d = load_fold(f); c = candidates(d)
-        for cand in ("V1P", "S_mix", "S2_mix", "S2A_mix", "S3A_mix"):
+        for cand in ("V1P", "S_mix", "S2_mix", "S2A_mix", "S3A_mix", "S4A_mix"):
             if cand in c:
                 pub = m.filter((pl.col("fold") == f) & (pl.col("candidate") == cand))["rmse"][0]
                 assert abs(rmse(d["y"], c[cand]) - pub) < 1e-6

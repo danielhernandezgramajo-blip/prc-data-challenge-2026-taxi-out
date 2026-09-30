@@ -43,7 +43,7 @@ def main() -> None:
     units = pl.read_csv(T / "units_log.csv", infer_schema_length=None)
     audit = feature_audit()
     fin = frozen["finalist"] if frozen else dec["finalist"]
-    show = ["V1P", "S_mix", "S2_mix_a0", "S2_mix", "A_mix", "A_mix_4", "S2A_mix", "S2A_mix_4", "S3_mix", "S3A_mix", "S3A_mix_4"]
+    show = ["V1P", "S_mix", "S2_mix_a0", "S2_mix", "A_mix", "A_mix_4", "S2A_mix", "S2A_mix_4", "S3_mix", "S3A_mix", "S3A_mix_4", "S4_mix", "S4A_mix", "S4A_mix_4"]
     fc = json.loads((T / "final_choice.json").read_text()) if (T / "final_choice.json").exists() else None
     L = []; w = L.append
     w("# V3 (etapa 2 de V2) — Informe de experimentos (mismo protocolo de origen creciente, 8 folds)\n")
@@ -82,7 +82,7 @@ registra con la hora correcta pero con la fecha del programado. En 2025 esa celd
     w("\n## 8. Bootstrap pareado por bloques aeropuerto-día (1 000 remuestreos, SEED 42)\n")
     w(md_table(boot.filter(pl.col("candidate").is_in(show)).select("candidate", "vs", "rmse_baseline", "rmse_candidate", "delta_rmse_point", "delta_p2.5", "delta_p97.5", "p_improve", "n_blocks"), {"p_improve": "{:.3f}"}))
     w("\n## 9. Criterios de selección (solo desarrollo; frente a S_mix y frente a V1P)\n")
-    w(md_table(sel.filter(pl.col("candidate").is_in(show)).select("candidate", "vs", "rmse_gain_s", "cov5_gain_pp", "folds_not_worse", "worst_fold_worsening_pct", "min_cov5_fold", "rmse_normal_gain_s", "share_gain_top50_rows", "p_improve_boot", "all_required_criteria", "c8_not_few_rows"),
+    w(md_table(sel.filter(pl.col("candidate").is_in(show)).select("candidate", "vs", "rmse_gain_s", "cov5_gain_pp", "folds_not_worse", "worst_fold_worsening_pct", "min_cov5_fold", "rmse_normal_gain_s", "airports_worse_of_10", "share_gain_top50_rows", "p_improve_boot", "all_required_criteria", "c8_no_harm_bulk", "c8_old_share_top50"),
                {"cov5_gain_pp": "{:.2f}", "share_gain_top50_rows": "{:.3f}", "p_improve_boot": "{:.3f}"}))
     w(f"\nDecisión en desarrollo (regla prefijada): elegibles {dec['eligible']}; cumplen {[c for _, c in dec['passing']]}; finalista **{dec['finalist']}**.\n")
     w("""
@@ -95,8 +95,47 @@ filas normales. La versión jerárquica (S3*, `proba_b20`) añade dentro de la c
 retraso (≥ 12 h) con el mismo α = 20. **Esta variante no estaba registrada antes de abrir diciembre**, por lo que diciembre no es
 una validación limpia para ella; se evalúa con los mismos criterios en desarrollo y se documenta la elección en `final_choice.json`.
 """)
+    w("""
+### 9c. Etapa 2d: umbral elegido dentro de cada ventana de entrenamiento (validación anidada)
+
+Para no fijar el umbral de 12 h a mano (elegido tras ver diciembre), S4* elige el umbral en cada fold **solo con las filas de
+celda del bloque de entrenamiento**: log-loss leave-one-out de la distribución de clases para {celda plana} ∪ {banda ≥ h, h ∈
+6/9/12/18/24 h}, con el mismo α = 20; si ningún umbral mejora a la celda plana, se usa la celda plana. El mes de validación y
+diciembre nunca intervienen en la elección. Lo que sigue siendo post-hoc es la HIPÓTESIS (que la clase 2 dependa del retraso),
+nacida de mirar diciembre y el año completo; eso no lo cura ninguna validación con estos datos, solo el ranking 2026.
+""")
+    units2 = units.filter(pl.col("model") == f"proba_n{ALPHA_PRIMARY}") if "model" in units.columns else None
+    try:
+        sel_rows = []
+        for f in ["May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]:
+            info = json.loads((Path("models/experiments/v3/preds") / f"S2_mixture__{f}__proba__info.json").read_text()) if (Path("models/experiments/v3/preds") / f"S2_mixture__{f}__proba__info.json").exists() else None
+            if info and "nested_selection" in info:
+                ns = info["nested_selection"]; sel_rows.append({"fold": f, "n_celda_train": ns["n_cell_rows"], "umbral_elegido_h": ns["selected_h"], **{k: round(v, 4) for k, v in ns["loo_logloss"].items()}})
+        if sel_rows:
+            w(md_table(pl.DataFrame(sel_rows)))
+    except Exception as e:  # noqa: BLE001
+        w(f"\n(no se pudo leer la selección anidada: {e})\n")
+    w("""
+### 9d. Criterio c8 redefinido
+
+El c8 original de V2 ("la ganancia no depende de pocas filas": < 90 % de la reducción de SSE en las 50 mejores filas) es
+inaplicable por construcción a una corrección de un régimen raro: cualquier arreglo de la cola lo incumple aunque sea real.
+En V3 se sustituye por **c8_no_harm_bulk**: el RMSE de la población normal (0 < y ≤ 3 h) no empeora más de 1 s y a lo sumo 2 de
+los 10 aeropuertos empeoran en RMSE pooled. El valor antiguo se sigue reportando (`c8_old_share_top50`) como información.
+""")
     if fc:
-        w(f"\nElección final para `candidate_v3`: **{fc['candidate']}** (post-hoc: {fc['post_hoc']}; finalista congelada: {fc['frozen_finalist']}). Motivo: {fc['reason']}\n")
+        w(f"\nElección final para `candidate_v3`: **{fc['candidate']}** (post-hoc: {fc['post_hoc']}; finalista congelada por la regla prefijada: {fc['frozen_finalist']}). Motivo: {fc['reason']}\n")
+    w("""
+### Escalera de riesgo para la subida
+
+| Candidata | Estado metodológico | Qué apuesta |
+|---|---|---|
+| V1 (`candidate_v1`) | protocolo V1, sin mezcla | no apuesta por el artefacto BLOCK = SCHED; peor si persiste (lo esperable) |
+| V2 S_mix (`candidate_v2`) | congelada y confirmada en diciembre (primera apertura) | apuesta por el artefacto; celdas sin tratar |
+| S2A_mix | finalista por la regla prefijada de la etapa 2; diciembre = segunda apertura | + celdas planas + congestión; mejora confirmada |
+| S3A_mix | post-hoc (umbral fijo tras ver diciembre) | + banda de retraso fija: experimental |
+| S4A_mix (`candidate_v3`) | hipótesis post-hoc, parámetro anidado | + banda con umbral elegido en entrenamiento: experimental, la mejor apuesta |
+""")
     if run["holdout_opened"]:
         w("## 10. Holdout de diciembre (segunda apertura; confirmación, no selección)\n")
         w("""Diciembre ya se había abierto en la etapa 1 para comparar S_mix con V1P; por eso aquí NO puede considerarse un holdout

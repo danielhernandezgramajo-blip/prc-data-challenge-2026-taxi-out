@@ -25,7 +25,10 @@
     "S2A_mix_4",
     "S3_mix",
     "S3A_mix",
-    "S3A_mix_4"
+    "S3A_mix_4",
+    "S4_mix",
+    "S4A_mix",
+    "S4A_mix_4"
   ],
   "criteria": {
     "min_rmse_gain_s": 3.0,
@@ -41,5 +44,5 @@
     "S_mix",
     "V1P"
   ],
-  "at_utc": "2026-09-30T00:51:33+00:00"
+  "at_utc": "2026-09-30T16:27:05+00:00"
 }

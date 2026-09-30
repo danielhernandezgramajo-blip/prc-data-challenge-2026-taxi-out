@@ -13,10 +13,18 @@ Candidatos (registrados en experiment_registry.csv ANTES de mirar resultados; ve
     S2A_mix_4           proba2 (α = 20) + normal 4 componentes                                     elegible
     normal_v2 = 0.5·direct_normal + 0.5·residual (v1_protocol), es decir, la rama normal de S_mix.
 
+    S3_mix / S3A_mix / S3A_mix_4   (2c, POST-HOC) celdas jerárquicas por banda de retraso con umbral FIJO 12 h, definido tras abrir diciembre
+    S4_mix / S4A_mix / S4A_mix_4   (2d, hipótesis post-hoc, parámetro anidado) mismo esquema, pero el umbral se elige por log-loss
+                                    leave-one-out DENTRO de cada ventana de entrenamiento (rejilla 6/9/12/18/24 h, o celda plana);
+                                    diciembre nunca interviene en la elección del parámetro. La hipótesis (bandas de retraso) sigue
+                                    siendo posterior a diciembre: se declara como tal.
+
 Regla de decisión (prefijada antes de ver resultados): entre las ELEGIBLES, la finalista es la de menor RMSE pooled de
-desarrollo que cumpla TODOS los criterios frente a S_mix y frente a V1P (c1–c6 y bootstrap P ≥ 0.87; c8 informativo,
-ver informe V2). Si ninguna cumple, se mantiene S_mix (candidate_v2) y no se genera candidate_v3. α no se selecciona:
-20 es el valor primario; 0/5/100 solo se reportan.
+desarrollo que cumpla TODOS los criterios frente a S_mix y frente a V1P (c1–c6, c8 redefinido, bootstrap P ≥ 0.87).
+Si ninguna cumple, se mantiene S_mix (candidate_v2) y no se genera candidate_v3. α no se selecciona: 20 es el valor
+primario; 0/5/100 solo se reportan. c8 (V3): "no dañar al grueso" = RMSE de la población normal no empeora > 1 s y a lo
+sumo 2 de 10 aeropuertos empeoran (el c8 original, share_top50 < 0,9, es inaplicable a una corrección de régimen raro y
+se reporta como informativo).
 
 Uso: python src/v3_analysis.py                  # desarrollo
      python src/v3_analysis.py --freeze         # además escribe finalist_frozen.json (una vez)
@@ -58,8 +66,11 @@ REGISTRY = [
     {"candidate": "S3_mix", "family": "S3 (2c, post-hoc)", "definition": "proba2 celdas jerárquicas por banda de retraso (>=12 h), alpha=20 + normal_v2", "eligible": False},
     {"candidate": "S3A_mix", "family": "S3+A (2c, post-hoc)", "definition": "proba2 celdas jerárquicas por banda (>=12 h), alpha=20 + normal_s", "eligible": False},
     {"candidate": "S3A_mix_4", "family": "S3+A (2c, post-hoc)", "definition": "proba2 celdas jerárquicas por banda (>=12 h), alpha=20 + normal 4 componentes", "eligible": False},
+    {"candidate": "S4_mix", "family": "S4 (2d, hipótesis post-hoc, umbral anidado)", "definition": "proba2 celdas jerárquicas con umbral elegido por LOO en el bloque de entrenamiento (o plana), alpha=20 + normal_v2", "eligible": False},
+    {"candidate": "S4A_mix", "family": "S4+A (2d, hipótesis post-hoc, umbral anidado)", "definition": "proba2 celdas jerárquicas con umbral anidado, alpha=20 + normal_s", "eligible": False},
+    {"candidate": "S4A_mix_4", "family": "S4+A (2d, hipótesis post-hoc, umbral anidado)", "definition": "proba2 celdas jerárquicas con umbral anidado, alpha=20 + normal 4 componentes", "eligible": False},
 ]
-POST_HOC = ["S3_mix", "S3A_mix", "S3A_mix_4"]   # definidos DESPUÉS de abrir diciembre: no elegibles por la regla prefijada; ver --final-choice
+POST_HOC = ["S3_mix", "S3A_mix", "S3A_mix_4", "S4_mix", "S4A_mix", "S4A_mix_4"]   # definidos DESPUÉS de abrir diciembre: no elegibles por la regla prefijada; ver --final-choice
 ELIGIBLE = [r["candidate"] for r in REGISTRY if r["eligible"]]
 BASELINES = ["S_mix", "V1P"]
 
@@ -71,6 +82,8 @@ def load_fold(fold: str) -> dict:
         d[f"proba2_a{a}"] = np.load(f).astype(np.float64) if f.exists() else None
     f = PRED_DIR / f"S2_mixture__{fold}__proba_b{ALPHA_PRIMARY}.npy"
     d["proba2_band"] = np.load(f).astype(np.float64) if f.exists() else None
+    f = PRED_DIR / f"S2_mixture__{fold}__proba_n{ALPHA_PRIMARY}.npy"
+    d["proba2_nested"] = np.load(f).astype(np.float64) if f.exists() else None
     for kind in ("direct_normal", "residual_normal"):
         f = PRED_DIR / f"A_surface__{fold}__{kind}.npy"
         d[f"A_surface__{kind}"] = np.load(f).astype(np.float64) if f.exists() else None
@@ -103,8 +116,12 @@ def candidates(d: dict) -> dict[str, np.ndarray]:
             out["S2A_mix"] = mixture(p2, normal_s, s); out["S2A_mix_4"] = mixture(p2, normal_4, s)
         if d["proba2_band"] is not None:
             out["S3A_mix"] = mixture(d["proba2_band"], normal_s, s); out["S3A_mix_4"] = mixture(d["proba2_band"], normal_4, s)
+        if d["proba2_nested"] is not None:
+            out["S4A_mix"] = mixture(d["proba2_nested"], normal_s, s); out["S4A_mix_4"] = mixture(d["proba2_nested"], normal_4, s)
     if d["proba2_band"] is not None:
         out["S3_mix"] = mixture(d["proba2_band"], normal_v2, s)
+    if d["proba2_nested"] is not None:
+        out["S4_mix"] = mixture(d["proba2_nested"], normal_v2, s)
     return out
 
 
@@ -119,7 +136,12 @@ def error_decomposition(y: np.ndarray, pred: np.ndarray, cls: np.ndarray) -> dic
 
 
 def criteria_rows(cands, baseline, data, preds, metrics, pooled, boot) -> list[dict]:
+    """Criterios c1–c6 y bootstrap como en V2. c8 REDEFINIDO (V3): el criterio original ("la ganancia no depende de pocas filas",
+    share_top50 < 0,9) es inaplicable por construcción a una corrección de régimen raro (V2 ya lo documentó como salvedad); se sustituye
+    por c8_no_harm_bulk = (RMSE de la población normal 0 < y ≤ 3 h no empeora más de 1 s) ∧ (a lo sumo 2 de 10 aeropuertos empeoran
+    en RMSE pooled). El valor antiguo se reporta como c8_old_share_top50 (informativo)."""
     yd = np.concatenate([data[f]["y"] for f in DEV_FOLDS]); base_p = np.concatenate([preds[f][baseline] for f in DEV_FOLDS])
+    apt = np.concatenate([data[f]["airport"].astype(str) for f in DEV_FOLDS])
     base_fold = {f: rmse(data[f]["y"], preds[f][baseline]) for f in DEV_FOLDS}
     base_pool = pooled.filter((pl.col("candidate") == baseline) & (pl.col("set") == "dev_pooled")).row(0, named=True)
     normal = (yd > 0) & (yd <= OUTLIER_HI_SEC)
@@ -137,6 +159,12 @@ def criteria_rows(cands, baseline, data, preds, metrics, pooled, boot) -> list[d
         pc = np.concatenate([preds[f][c] for f in DEV_FOLDS]); e_b = (base_p - yd) ** 2; e_c = (pc - yd) ** 2
         gains = e_b - e_c; top50 = np.sort(gains)[-50:].sum(); total_gain = gains.sum()
         share_top50 = float(top50 / total_gain) if total_gain > 0 else np.nan
+        rmse_normal_gain = float(np.sqrt(np.mean(e_b[normal])) - np.sqrt(np.mean(e_c[normal])))
+        airports_worse = 0
+        for a_ in np.unique(apt):
+            m = apt == a_
+            if np.sqrt(np.mean(e_c[m])) > np.sqrt(np.mean(e_b[m])):
+                airports_worse += 1
         crit = {
             "c1_rmse_pooled_lower": cp["rmse"] < base_pool["rmse"],
             "c2_practical_gain": (gain >= CRITERIA["min_rmse_gain_s"] and cov_gain > -0.5) or (cov_gain >= CRITERIA["min_cov5_gain_pp"] and gain > -3.0),
@@ -144,14 +172,15 @@ def criteria_rows(cands, baseline, data, preds, metrics, pooled, boot) -> list[d
             "c4_no_fold_worse_2pct": worst_pct <= CRITERIA["max_fold_worsening_pct"],
             "c5_cov5_pooled_ge_87": cp["cov_le300"] >= CRITERIA["min_cov5_pooled"],
             "c6_cov5_each_fold_ge_85": cov_each >= CRITERIA["min_cov5_each_fold"],
-            "c8_not_few_rows": share_top50 < 0.9 if not np.isnan(share_top50) else True,
+            "c8_no_harm_bulk": (rmse_normal_gain >= -1.0) and (airports_worse <= 2),
             "boot_p_improve_ge_0.87": bb["p_improve"] >= CRITERIA["min_p_improve"],
         }
-        required = {k: v for k, v in crit.items() if k != "c8_not_few_rows"}
+        required = dict(crit)
         rows.append({"candidate": c, "vs": baseline, "rmse_pooled": cp["rmse"], "rmse_gain_s": gain, "cov5_pooled": cp["cov_le300"], "cov5_gain_pp": cov_gain,
                      "folds_not_worse": f"{not_worse}/7", "worst_fold_worsening_pct": worst_pct, "min_cov5_fold": cov_each,
-                     "rmse_normal_gain_s": float(np.sqrt(np.mean(e_b[normal])) - np.sqrt(np.mean(e_c[normal]))),
-                     "share_gain_top50_rows": share_top50, "p_improve_boot": bb["p_improve"], **crit,
+                     "rmse_normal_gain_s": rmse_normal_gain, "airports_worse_of_10": airports_worse,
+                     "share_gain_top50_rows": share_top50, "c8_old_share_top50": (share_top50 < 0.9) if not np.isnan(share_top50) else True,
+                     "p_improve_boot": bb["p_improve"], **crit,
                      "all_required_criteria": all(required.values()), "all_criteria_incl_c8": all(crit.values())})
     return rows
 

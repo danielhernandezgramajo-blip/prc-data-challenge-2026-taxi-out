@@ -1,6 +1,6 @@
 # V3 (etapa 2 de V2) — Informe de experimentos (mismo protocolo de origen creciente, 8 folds)
 
-Generado 2026-09-30 01:38 UTC. Holdout de diciembre abierto (segunda apertura): **True**. Finalista congelada antes de abrirlo: **S2A_mix** (2026-09-29T23:45:59+00:00).
+Generado 2026-09-30 16:40 UTC. Holdout de diciembre abierto (segunda apertura): **True**. Finalista congelada antes de abrirlo: **S2A_mix** (2026-09-29T23:45:59+00:00).
 
 ## 1. Motivación: dónde estaba el error restante de S_mix (desarrollo, mayo–noviembre)
 
@@ -29,6 +29,9 @@ registra con la hora correcta pero con la fecha del programado. En 2025 esa celd
 | S3_mix | S3 (2c, post-hoc) | proba2 celdas jerárquicas por banda de retraso (>=12 h), alpha=20 + normal_v2 | False |
 | S3A_mix | S3+A (2c, post-hoc) | proba2 celdas jerárquicas por banda (>=12 h), alpha=20 + normal_s | False |
 | S3A_mix_4 | S3+A (2c, post-hoc) | proba2 celdas jerárquicas por banda (>=12 h), alpha=20 + normal 4 componentes | False |
+| S4_mix | S4 (2d, hipótesis post-hoc, umbral anidado) | proba2 celdas jerárquicas con umbral elegido por LOO en el bloque de entrenamiento (o plana), alpha=20 + normal_v2 | False |
+| S4A_mix | S4+A (2d, hipótesis post-hoc, umbral anidado) | proba2 celdas jerárquicas con umbral anidado, alpha=20 + normal_s | False |
+| S4A_mix_4 | S4+A (2d, hipótesis post-hoc, umbral anidado) | proba2 celdas jerárquicas con umbral anidado, alpha=20 + normal 4 componentes | False |
 
 menor RMSE pooled de desarrollo entre las elegibles que cumplen todos los criterios requeridos frente a S_mix y V1P. α = 20 prefijado (0 = ablación sin celdas; 5 y 100 = sensibilidad, no se selecciona entre ellos).
 
@@ -107,46 +110,54 @@ menor RMSE pooled de desarrollo entre las elegibles que cumplen todos los criter
 | A_surface | Oct | residual_normal | 326.7 | 1495709 |  |  |  | 288.0 | 264.7 |
 | A_surface | Sep | direct_normal | 311.5 | 1319766 |  |  |  | 450.0 | 261.5 |
 | A_surface | Sep | residual_normal | 309.3 | 1319766 |  |  |  | 456.5 | 266.3 |
-| S2_mixture | Aug | proba_a0 | 182.2 | 1195968 | 0.1 | 0.9 | nan |  |  |
-| S2_mixture | Aug | proba_a100 | 183.9 | 1195968 | 0.1 | 0.9 | nan |  |  |
-| S2_mixture | Aug | proba_a20 | 183.4 | 1195968 | 0.1 | 0.9 | nan |  |  |
-| S2_mixture | Aug | proba_a5 | 182.8 | 1195968 | 0.1 | 0.9 | nan |  |  |
-| S2_mixture | Aug | proba_b20 | 184.4 | 1195968 | 0.1 | 0.9 | nan |  |  |
-| S2_mixture | Dec | proba_a0 | 307.0 | 1919005 | 0.1 | 0.9 | 1.0 |  |  |
-| S2_mixture | Dec | proba_a100 | 308.7 | 1919005 | 0.1 | 0.9 | 1.0 |  |  |
-| S2_mixture | Dec | proba_a20 | 308.1 | 1919005 | 0.1 | 0.9 | 1.0 |  |  |
-| S2_mixture | Dec | proba_a5 | 307.6 | 1919005 | 0.1 | 0.9 | 1.0 |  |  |
-| S2_mixture | Dec | proba_b20 | 309.2 | 1919005 | 0.1 | 0.9 | 1.0 |  |  |
-| S2_mixture | Jul | proba_a0 | 151.1 | 1005290 | 0.1 | 0.9 | 1.0 |  |  |
-| S2_mixture | Jul | proba_a100 | 153.0 | 1005290 | 0.1 | 0.9 | 1.0 |  |  |
-| S2_mixture | Jul | proba_a20 | 152.4 | 1005290 | 0.1 | 0.9 | 1.0 |  |  |
-| S2_mixture | Jul | proba_a5 | 151.7 | 1005290 | 0.1 | 0.9 | 1.0 |  |  |
-| S2_mixture | Jul | proba_b20 | 153.6 | 1005290 | 0.1 | 0.9 | 1.0 |  |  |
-| S2_mixture | Jun | proba_a0 | 124.5 | 822210 | 0.1 | 0.9 | 1.0 |  |  |
-| S2_mixture | Jun | proba_a100 | 126.2 | 822210 | 0.1 | 0.9 | 1.0 |  |  |
-| S2_mixture | Jun | proba_a20 | 125.6 | 822210 | 0.1 | 0.9 | 1.0 |  |  |
-| S2_mixture | Jun | proba_a5 | 125.0 | 822210 | 0.1 | 0.9 | 1.0 |  |  |
-| S2_mixture | Jun | proba_b20 | 126.8 | 822210 | 0.1 | 0.9 | 1.0 |  |  |
-| S2_mixture | May | proba_a0 | 96.4 | 637029 | 0.1 | 0.9 | 1.0 |  |  |
-| S2_mixture | May | proba_a100 | 98.3 | 637029 | 0.1 | 0.9 | 1.0 |  |  |
-| S2_mixture | May | proba_a20 | 97.7 | 637029 | 0.1 | 0.9 | 1.0 |  |  |
-| S2_mixture | May | proba_a5 | 97.1 | 637029 | 0.1 | 0.9 | 1.0 |  |  |
-| S2_mixture | May | proba_b20 | 98.8 | 637029 | 0.1 | 0.9 | 1.0 |  |  |
-| S2_mixture | Nov | proba_a0 | 271.1 | 1756691 | 0.2 | 0.9 | 1.0 |  |  |
-| S2_mixture | Nov | proba_a100 | 272.7 | 1756691 | 0.2 | 0.9 | 1.0 |  |  |
-| S2_mixture | Nov | proba_a20 | 272.2 | 1756691 | 0.2 | 0.9 | 1.0 |  |  |
-| S2_mixture | Nov | proba_a5 | 271.7 | 1756691 | 0.2 | 0.9 | 1.0 |  |  |
-| S2_mixture | Nov | proba_b20 | 273.3 | 1756691 | 0.2 | 0.9 | 1.0 |  |  |
-| S2_mixture | Oct | proba_a0 | 239.1 | 1571037 | 0.1 | 0.9 | nan |  |  |
-| S2_mixture | Oct | proba_a100 | 240.9 | 1571037 | 0.1 | 0.9 | nan |  |  |
-| S2_mixture | Oct | proba_a20 | 240.4 | 1571037 | 0.1 | 0.9 | nan |  |  |
-| S2_mixture | Oct | proba_a5 | 239.7 | 1571037 | 0.1 | 0.9 | nan |  |  |
-| S2_mixture | Oct | proba_b20 | 241.5 | 1571037 | 0.1 | 0.9 | nan |  |  |
-| S2_mixture | Sep | proba_a0 | 208.5 | 1387105 | 0.1 | 0.9 | 1.0 |  |  |
-| S2_mixture | Sep | proba_a100 | 210.2 | 1387105 | 0.1 | 0.9 | 1.0 |  |  |
-| S2_mixture | Sep | proba_a20 | 209.6 | 1387105 | 0.1 | 0.9 | 1.0 |  |  |
-| S2_mixture | Sep | proba_a5 | 209.0 | 1387105 | 0.1 | 0.9 | 1.0 |  |  |
-| S2_mixture | Sep | proba_b20 | 210.8 | 1387105 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | Aug | proba_a0 | 159.2 | 1195968 | 0.1 | 0.9 | nan |  |  |
+| S2_mixture | Aug | proba_a100 | 160.7 | 1195968 | 0.1 | 0.9 | nan |  |  |
+| S2_mixture | Aug | proba_a20 | 160.1 | 1195968 | 0.1 | 0.9 | nan |  |  |
+| S2_mixture | Aug | proba_a5 | 159.7 | 1195968 | 0.1 | 0.9 | nan |  |  |
+| S2_mixture | Aug | proba_b20 | 161.2 | 1195968 | 0.1 | 0.9 | nan |  |  |
+| S2_mixture | Aug | proba_n20 | 161.7 | 1195968 | 0.1 | 0.9 | nan |  |  |
+| S2_mixture | Dec | proba_a0 | 239.4 | 1919005 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | Dec | proba_a100 | 240.6 | 1919005 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | Dec | proba_a20 | 240.2 | 1919005 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | Dec | proba_a5 | 239.8 | 1919005 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | Dec | proba_b20 | 241.1 | 1919005 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | Dec | proba_n20 | 241.6 | 1919005 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | Jul | proba_a0 | 124.9 | 1005290 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | Jul | proba_a100 | 126.5 | 1005290 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | Jul | proba_a20 | 125.9 | 1005290 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | Jul | proba_a5 | 125.4 | 1005290 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | Jul | proba_b20 | 127.0 | 1005290 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | Jul | proba_n20 | 127.5 | 1005290 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | Jun | proba_a0 | 101.3 | 822210 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | Jun | proba_a100 | 102.7 | 822210 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | Jun | proba_a20 | 102.2 | 822210 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | Jun | proba_a5 | 101.8 | 822210 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | Jun | proba_b20 | 103.2 | 822210 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | Jun | proba_n20 | 103.7 | 822210 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | May | proba_a0 | 96.9 | 637029 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | May | proba_a100 | 98.4 | 637029 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | May | proba_a20 | 97.8 | 637029 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | May | proba_a5 | 97.3 | 637029 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | May | proba_b20 | 98.9 | 637029 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | May | proba_n20 | 99.4 | 637029 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | Nov | proba_a0 | 220.9 | 1756691 | 0.2 | 0.9 | 1.0 |  |  |
+| S2_mixture | Nov | proba_a100 | 222.2 | 1756691 | 0.2 | 0.9 | 1.0 |  |  |
+| S2_mixture | Nov | proba_a20 | 221.8 | 1756691 | 0.2 | 0.9 | 1.0 |  |  |
+| S2_mixture | Nov | proba_a5 | 221.4 | 1756691 | 0.2 | 0.9 | 1.0 |  |  |
+| S2_mixture | Nov | proba_b20 | 222.7 | 1756691 | 0.2 | 0.9 | 1.0 |  |  |
+| S2_mixture | Nov | proba_n20 | 223.1 | 1756691 | 0.2 | 0.9 | 1.0 |  |  |
+| S2_mixture | Oct | proba_a0 | 195.2 | 1571037 | 0.1 | 0.9 | nan |  |  |
+| S2_mixture | Oct | proba_a100 | 196.6 | 1571037 | 0.1 | 0.9 | nan |  |  |
+| S2_mixture | Oct | proba_a20 | 196.1 | 1571037 | 0.1 | 0.9 | nan |  |  |
+| S2_mixture | Oct | proba_a5 | 195.7 | 1571037 | 0.1 | 0.9 | nan |  |  |
+| S2_mixture | Oct | proba_b20 | 197.0 | 1571037 | 0.1 | 0.9 | nan |  |  |
+| S2_mixture | Oct | proba_n20 | 197.5 | 1571037 | 0.1 | 0.9 | nan |  |  |
+| S2_mixture | Sep | proba_a0 | 176.5 | 1387105 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | Sep | proba_a100 | 178.0 | 1387105 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | Sep | proba_a20 | 177.5 | 1387105 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | Sep | proba_a5 | 177.0 | 1387105 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | Sep | proba_b20 | 178.5 | 1387105 | 0.1 | 0.9 | 1.0 |  |  |
+| S2_mixture | Sep | proba_n20 | 179.0 | 1387105 | 0.1 | 0.9 | 1.0 |  |  |
 
 ## 5. Resultados pooled de desarrollo (RMSE sobre todas las filas, no media de medias)
 
@@ -163,6 +174,9 @@ menor RMSE pooled de desarrollo entre las elegibles que cumplen todos los criter
 | S3_mix | 298.7 | 159.0 | 111.4 | 87.80 | 97.80 | 251.3 | 517.7 | 46256.8 | 67.5 | 13.8 | 18.7 | 68 |
 | S3A_mix | 297.1 | 156.8 | 109.4 | 88.16 | 97.86 | 246.5 | 543.2 | 46288.6 | 65.7 | 15.4 | 18.9 | 74 |
 | S3A_mix_4 | 297.1 | 157.3 | 110.0 | 88.07 | 97.84 | 248.0 | 529.6 | 46272.6 | 66.5 | 14.6 | 18.9 | 65 |
+| S4_mix | 299.5 | 159.0 | 111.4 | 87.80 | 97.80 | 251.3 | 518.8 | 46788.4 | 67.2 | 13.8 | 19.0 | 68 |
+| S4A_mix | 297.8 | 156.8 | 109.4 | 88.16 | 97.86 | 246.5 | 544.3 | 46818.7 | 65.4 | 15.4 | 19.3 | 74 |
+| S4A_mix_4 | 297.9 | 157.3 | 110.0 | 88.07 | 97.84 | 248.0 | 530.7 | 46803.4 | 66.1 | 14.6 | 19.3 | 65 |
 
 Sensibilidad a α (S2_mix): 
 
@@ -176,15 +190,15 @@ Sensibilidad a α (S2_mix):
 
 ## 6. Por fold (referencias y elegibles)
 
-| fold | V1P | S_mix | S2_mix_a0 | S2_mix | A_mix | A_mix_4 | S2A_mix | S2A_mix_4 | S3_mix | S3A_mix | S3A_mix_4 |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Aug | 357.2 | 293.2 | 295.0 | 284.0 | 290.0 | 290.6 | 282.0 | 282.0 | 283.6 | 281.5 | 281.6 |
-| Jul | 559.0 | 415.6 | 404.9 | 362.3 | 414.9 | 414.5 | 361.3 | 360.9 | 351.8 | 350.7 | 350.3 |
-| Jun | 403.7 | 344.6 | 344.2 | 330.6 | 343.4 | 343.4 | 329.4 | 329.4 | 329.6 | 328.4 | 328.4 |
-| May | 324.7 | 316.5 | 315.7 | 316.1 | 314.9 | 315.1 | 314.6 | 314.8 | 315.8 | 314.4 | 314.5 |
-| Nov | 365.5 | 300.4 | 300.0 | 257.9 | 298.4 | 298.7 | 255.7 | 256.1 | 245.9 | 243.6 | 244.0 |
-| Oct | 253.9 | 246.4 | 245.8 | 247.3 | 244.3 | 244.4 | 245.7 | 245.6 | 245.7 | 244.1 | 244.0 |
-| Sep | 394.2 | 299.2 | 306.7 | 297.0 | 296.2 | 296.9 | 294.6 | 295.1 | 295.6 | 293.2 | 293.6 |
+| fold | V1P | S_mix | S2_mix_a0 | S2_mix | A_mix | A_mix_4 | S2A_mix | S2A_mix_4 | S3_mix | S3A_mix | S3A_mix_4 | S4_mix | S4A_mix | S4A_mix_4 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Aug | 357.2 | 293.2 | 295.0 | 284.0 | 290.0 | 290.6 | 282.0 | 282.0 | 283.6 | 281.5 | 281.6 | 283.6 | 281.5 | 281.6 |
+| Jul | 559.0 | 415.6 | 404.9 | 362.3 | 414.9 | 414.5 | 361.3 | 360.9 | 351.8 | 350.7 | 350.3 | 351.8 | 350.7 | 350.3 |
+| Jun | 403.7 | 344.6 | 344.2 | 330.6 | 343.4 | 343.4 | 329.4 | 329.4 | 329.6 | 328.4 | 328.4 | 329.6 | 328.4 | 328.4 |
+| May | 324.7 | 316.5 | 315.7 | 316.1 | 314.9 | 315.1 | 314.6 | 314.8 | 315.8 | 314.4 | 314.5 | 315.8 | 314.4 | 314.5 |
+| Nov | 365.5 | 300.4 | 300.0 | 257.9 | 298.4 | 298.7 | 255.7 | 256.1 | 245.9 | 243.6 | 244.0 | 252.2 | 250.0 | 250.4 |
+| Oct | 253.9 | 246.4 | 245.8 | 247.3 | 244.3 | 244.4 | 245.7 | 245.6 | 245.7 | 244.1 | 244.0 | 246.2 | 244.6 | 244.5 |
+| Sep | 394.2 | 299.2 | 306.7 | 297.0 | 296.2 | 296.9 | 294.6 | 295.1 | 295.6 | 293.2 | 293.6 | 295.7 | 293.3 | 293.7 |
 
 ## 7. Por aeropuerto (pooled de desarrollo; RMSE)
 
@@ -215,6 +229,9 @@ Sensibilidad a α (S2_mix):
 | S3_mix | S_mix | 320.9 | 298.7 | -22.2 | -35.6 | -8.8 | 1.000 | 2140 |
 | S3A_mix | S_mix | 320.9 | 297.1 | -23.8 | -37.2 | -10.5 | 1.000 | 2140 |
 | S3A_mix_4 | S_mix | 320.9 | 297.1 | -23.8 | -37.2 | -10.3 | 1.000 | 2140 |
+| S4_mix | S_mix | 320.9 | 299.5 | -21.4 | -34.3 | -8.4 | 1.000 | 2140 |
+| S4A_mix | S_mix | 320.9 | 297.8 | -23.1 | -36.1 | -10.3 | 1.000 | 2140 |
+| S4A_mix_4 | S_mix | 320.9 | 297.9 | -23.0 | -35.9 | -10.1 | 1.000 | 2140 |
 | S_mix | V1P | 390.6 | 320.9 | -69.7 | -93.7 | -42.6 | 1.000 | 2140 |
 | S2_mix_a0 | V1P | 390.6 | 319.9 | -70.7 | -95.4 | -43.2 | 1.000 | 2140 |
 | S2_mix | V1P | 390.6 | 302.5 | -88.0 | -119.0 | -51.1 | 1.000 | 2140 |
@@ -225,33 +242,42 @@ Sensibilidad a α (S2_mix):
 | S3_mix | V1P | 390.6 | 298.7 | -91.8 | -124.2 | -52.7 | 1.000 | 2140 |
 | S3A_mix | V1P | 390.6 | 297.1 | -93.5 | -125.7 | -54.5 | 1.000 | 2140 |
 | S3A_mix_4 | V1P | 390.6 | 297.1 | -93.4 | -125.6 | -54.4 | 1.000 | 2140 |
+| S4_mix | V1P | 390.6 | 299.5 | -91.1 | -123.9 | -52.6 | 1.000 | 2140 |
+| S4A_mix | V1P | 390.6 | 297.8 | -92.8 | -125.3 | -54.3 | 1.000 | 2140 |
+| S4A_mix_4 | V1P | 390.6 | 297.9 | -92.7 | -125.5 | -54.2 | 1.000 | 2140 |
 
 ## 9. Criterios de selección (solo desarrollo; frente a S_mix y frente a V1P)
 
-| candidate | vs | rmse_gain_s | cov5_gain_pp | folds_not_worse | worst_fold_worsening_pct | min_cov5_fold | rmse_normal_gain_s | share_gain_top50_rows | p_improve_boot | all_required_criteria | c8_not_few_rows |
-|---|---|---:|---:|---|---:|---:|---:|---:|---:|---|---|
-| V1P | S_mix | -69.7 | -0.09 | 0/7 | 34.5 | 85.4 | -2.9 | nan | 0.000 | False | True |
-| S2_mix_a0 | S_mix | 1.0 | 0.00 | 5/7 | 2.5 | 85.4 | 1.1 | 4.017 | 0.735 | False | False |
-| S2_mix | S_mix | 18.4 | 0.00 | 6/7 | 0.4 | 85.4 | -0.2 | 1.135 | 1.000 | True | False |
-| A_mix | S_mix | 1.8 | 0.36 | 7/7 | -0.2 | 85.8 | 2.5 | 0.627 | 1.000 | False | True |
-| A_mix_4 | S_mix | 1.6 | 0.27 | 7/7 | -0.3 | 85.7 | 2.1 | 0.395 | 1.000 | False | True |
-| S2A_mix | S_mix | 20.0 | 0.36 | 7/7 | -0.3 | 85.7 | 1.8 | 1.061 | 1.000 | True | False |
-| S2A_mix_4 | S_mix | 19.9 | 0.27 | 7/7 | -0.3 | 85.7 | 1.7 | 1.053 | 1.000 | True | False |
-| S3_mix | S_mix | 22.2 | 0.00 | 7/7 | -0.2 | 85.4 | 0.4 | 1.077 | 1.000 | True | False |
-| S3A_mix | S_mix | 23.8 | 0.36 | 7/7 | -0.7 | 85.7 | 2.4 | 1.018 | 1.000 | True | False |
-| S3A_mix_4 | S_mix | 23.8 | 0.27 | 7/7 | -0.6 | 85.7 | 2.3 | 1.011 | 1.000 | True | False |
-| S_mix | V1P | 69.7 | 0.09 | 7/7 | -2.5 | 85.4 | 2.9 | 0.939 | 1.000 | True | False |
-| S2_mix_a0 | V1P | 70.7 | 0.09 | 7/7 | -2.8 | 85.4 | 4.1 | 0.934 | 1.000 | True | False |
-| S2_mix | V1P | 88.0 | 0.09 | 7/7 | -2.6 | 85.4 | 2.8 | 0.960 | 1.000 | True | False |
-| A_mix | V1P | 71.5 | 0.45 | 7/7 | -3.0 | 85.8 | 5.4 | 0.914 | 1.000 | True | False |
-| A_mix_4 | V1P | 71.3 | 0.36 | 7/7 | -3.0 | 85.7 | 5.0 | 0.918 | 1.000 | True | False |
-| S2A_mix | V1P | 89.7 | 0.45 | 7/7 | -3.1 | 85.7 | 4.7 | 0.944 | 1.000 | True | False |
-| S2A_mix_4 | V1P | 89.6 | 0.36 | 7/7 | -3.1 | 85.7 | 4.6 | 0.945 | 1.000 | True | False |
-| S3_mix | V1P | 91.8 | 0.09 | 7/7 | -2.7 | 85.4 | 3.3 | 0.953 | 1.000 | True | False |
-| S3A_mix | V1P | 93.5 | 0.45 | 7/7 | -3.2 | 85.7 | 5.3 | 0.938 | 1.000 | True | False |
-| S3A_mix_4 | V1P | 93.4 | 0.36 | 7/7 | -3.1 | 85.7 | 5.2 | 0.939 | 1.000 | True | False |
+| candidate | vs | rmse_gain_s | cov5_gain_pp | folds_not_worse | worst_fold_worsening_pct | min_cov5_fold | rmse_normal_gain_s | airports_worse_of_10 | share_gain_top50_rows | p_improve_boot | all_required_criteria | c8_no_harm_bulk | c8_old_share_top50 |
+|---|---|---:|---:|---|---:|---:|---:|---:|---:|---:|---|---|---|
+| V1P | S_mix | -69.7 | -0.09 | 0/7 | 34.5 | 85.4 | -2.9 | 10 | nan | 0.000 | False | False | True |
+| S2_mix_a0 | S_mix | 1.0 | 0.00 | 5/7 | 2.5 | 85.4 | 1.1 | 7 | 4.017 | 0.735 | False | False | False |
+| S2_mix | S_mix | 18.4 | 0.00 | 6/7 | 0.4 | 85.4 | -0.2 | 8 | 1.135 | 1.000 | False | False | False |
+| A_mix | S_mix | 1.8 | 0.36 | 7/7 | -0.2 | 85.8 | 2.5 | 0 | 0.627 | 1.000 | False | True | True |
+| A_mix_4 | S_mix | 1.6 | 0.27 | 7/7 | -0.3 | 85.7 | 2.1 | 0 | 0.395 | 1.000 | False | True | True |
+| S2A_mix | S_mix | 20.0 | 0.36 | 7/7 | -0.3 | 85.7 | 1.8 | 0 | 1.061 | 1.000 | True | True | False |
+| S2A_mix_4 | S_mix | 19.9 | 0.27 | 7/7 | -0.3 | 85.7 | 1.7 | 0 | 1.053 | 1.000 | True | True | False |
+| S3_mix | S_mix | 22.2 | 0.00 | 7/7 | -0.2 | 85.4 | 0.4 | 8 | 1.077 | 1.000 | False | False | False |
+| S3A_mix | S_mix | 23.8 | 0.36 | 7/7 | -0.7 | 85.7 | 2.4 | 0 | 1.018 | 1.000 | True | True | False |
+| S3A_mix_4 | S_mix | 23.8 | 0.27 | 7/7 | -0.6 | 85.7 | 2.3 | 0 | 1.011 | 1.000 | True | True | False |
+| S4_mix | S_mix | 21.4 | 0.00 | 7/7 | -0.1 | 85.4 | 0.4 | 8 | 1.083 | 1.000 | False | False | False |
+| S4A_mix | S_mix | 23.1 | 0.36 | 7/7 | -0.7 | 85.7 | 2.3 | 0 | 1.021 | 1.000 | True | True | False |
+| S4A_mix_4 | S_mix | 23.0 | 0.27 | 7/7 | -0.6 | 85.7 | 2.2 | 0 | 1.014 | 1.000 | True | True | False |
+| S_mix | V1P | 69.7 | 0.09 | 7/7 | -2.5 | 85.4 | 2.9 | 0 | 0.939 | 1.000 | True | True | False |
+| S2_mix_a0 | V1P | 70.7 | 0.09 | 7/7 | -2.8 | 85.4 | 4.1 | 0 | 0.934 | 1.000 | True | True | False |
+| S2_mix | V1P | 88.0 | 0.09 | 7/7 | -2.6 | 85.4 | 2.8 | 0 | 0.960 | 1.000 | True | True | False |
+| A_mix | V1P | 71.5 | 0.45 | 7/7 | -3.0 | 85.8 | 5.4 | 0 | 0.914 | 1.000 | True | True | False |
+| A_mix_4 | V1P | 71.3 | 0.36 | 7/7 | -3.0 | 85.7 | 5.0 | 0 | 0.918 | 1.000 | True | True | False |
+| S2A_mix | V1P | 89.7 | 0.45 | 7/7 | -3.1 | 85.7 | 4.7 | 0 | 0.944 | 1.000 | True | True | False |
+| S2A_mix_4 | V1P | 89.6 | 0.36 | 7/7 | -3.1 | 85.7 | 4.6 | 0 | 0.945 | 1.000 | True | True | False |
+| S3_mix | V1P | 91.8 | 0.09 | 7/7 | -2.7 | 85.4 | 3.3 | 0 | 0.953 | 1.000 | True | True | False |
+| S3A_mix | V1P | 93.5 | 0.45 | 7/7 | -3.2 | 85.7 | 5.3 | 0 | 0.938 | 1.000 | True | True | False |
+| S3A_mix_4 | V1P | 93.4 | 0.36 | 7/7 | -3.1 | 85.7 | 5.2 | 0 | 0.939 | 1.000 | True | True | False |
+| S4_mix | V1P | 91.1 | 0.09 | 7/7 | -2.7 | 85.4 | 3.3 | 0 | 0.954 | 1.000 | True | True | False |
+| S4A_mix | V1P | 92.8 | 0.45 | 7/7 | -3.2 | 85.7 | 5.2 | 0 | 0.939 | 1.000 | True | True | False |
+| S4A_mix_4 | V1P | 92.7 | 0.36 | 7/7 | -3.1 | 85.7 | 5.1 | 0 | 0.940 | 1.000 | True | True | False |
 
-Decisión en desarrollo (regla prefijada): elegibles ['S2_mix', 'A_mix', 'A_mix_4', 'S2A_mix', 'S2A_mix_4']; cumplen ['S2A_mix', 'S2A_mix_4', 'S2_mix']; finalista **S2A_mix**.
+Decisión en desarrollo (regla prefijada): elegibles ['S2_mix', 'A_mix', 'A_mix_4', 'S2A_mix', 'S2A_mix_4']; cumplen ['S2A_mix', 'S2A_mix_4']; finalista **S2A_mix**.
 
 
 ### 9b. Etapa 2c (post-hoc, definida DESPUÉS de abrir diciembre)
@@ -264,7 +290,45 @@ retraso (≥ 12 h) con el mismo α = 20. **Esta variante no estaba registrada an
 una validación limpia para ella; se evalúa con los mismos criterios en desarrollo y se documenta la elección en `final_choice.json`.
 
 
-Elección final para `candidate_v3`: **S3A_mix** (post-hoc: True; finalista congelada: S2A_mix). Motivo: Definida tras abrir diciembre (post-hoc): la celda plana reparte la masa de clase 2 a filas de retraso corto que casi nunca son de clase 2 (2025: 1/43 con retraso <12 h frente a 10/25 con >=12 h, Fisher p<0,001) y deja masa en p0 donde no hay filas normales; la versión jerárquica por banda de retraso (mismo alpha=20) domina a S2A_mix en los 8 folds (desarrollo pooled 297,1 frente a 300,9; diciembre 234,4 frente a 237,8) y cumple todos los criterios requeridos en desarrollo frente a S_mix y V1P. Diciembre no es validación limpia para esta variante.
+### 9c. Etapa 2d: umbral elegido dentro de cada ventana de entrenamiento (validación anidada)
+
+Para no fijar el umbral de 12 h a mano (elegido tras ver diciembre), S4* elige el umbral en cada fold **solo con las filas de
+celda del bloque de entrenamiento**: log-loss leave-one-out de la distribución de clases para {celda plana} ∪ {banda ≥ h, h ∈
+6/9/12/18/24 h}, con el mismo α = 20; si ningún umbral mejora a la celda plana, se usa la celda plana. El mes de validación y
+diciembre nunca intervienen en la elección. Lo que sigue siendo post-hoc es la HIPÓTESIS (que la clase 2 dependa del retraso),
+nacida de mirar diciembre y el año completo; eso no lo cura ninguna validación con estos datos, solo el ranking 2026.
+
+| fold | n_celda_train | umbral_elegido_h | flat | band_6h | band_9h | band_12h | band_18h | band_24h |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| May | 83 | 12 | 0.1 | 0.1 | 0.1 | 0.1 | 0.1 | 0.1 |
+| Jun | 94 | 12 | 0.1 | 0.1 | 0.1 | 0.1 | 0.1 | 0.1 |
+| Jul | 111 | 12 | 0.2 | 0.2 | 0.2 | 0.2 | 0.2 | 0.2 |
+| Aug | 148 | 12 | 0.2 | 0.2 | 0.2 | 0.2 | 0.2 | 0.2 |
+| Sep | 175 | 18 | 0.2 | 0.2 | 0.2 | 0.2 | 0.2 | 0.2 |
+| Oct | 201 | 18 | 0.2 | 0.2 | 0.2 | 0.2 | 0.2 | 0.2 |
+| Nov | 219 | 18 | 0.2 | 0.2 | 0.2 | 0.2 | 0.2 | 0.2 |
+| Dec | 236 | 12 | 0.2 | 0.2 | 0.2 | 0.2 | 0.2 | 0.2 |
+
+### 9d. Criterio c8 redefinido
+
+El c8 original de V2 ("la ganancia no depende de pocas filas": < 90 % de la reducción de SSE en las 50 mejores filas) es
+inaplicable por construcción a una corrección de un régimen raro: cualquier arreglo de la cola lo incumple aunque sea real.
+En V3 se sustituye por **c8_no_harm_bulk**: el RMSE de la población normal (0 < y ≤ 3 h) no empeora más de 1 s y a lo sumo 2 de
+los 10 aeropuertos empeoran en RMSE pooled. El valor antiguo se sigue reportando (`c8_old_share_top50`) como información.
+
+
+Elección final para `candidate_v3`: **S4A_mix** (post-hoc: True; finalista congelada por la regla prefijada: S2A_mix). Motivo: Hipótesis post-hoc (bandas de retraso dentro de la celda LIRF sin AOBT_3, nacida al abrir diciembre) con el parámetro elegido de forma anidada: el umbral (6/9/12/18/24 h o celda plana) se selecciona por log-loss leave-one-out SOLO con las filas de celda del bloque de entrenamiento de cada fold; diciembre nunca interviene en la elección del parámetro. Cumple todos los criterios requeridos en desarrollo (incl. c8 redefinido: no daña a la población normal ni a los aeropuertos) frente a S_mix y V1P: pooled 320,9 → 297,8 s, 7/7 folds, P(mejora)=1,000 (IC −36/−10). S3A_mix (umbral fijo 12 h elegido tras ver diciembre) queda como experimental; S2A_mix es la finalista rigurosamente defendible por la regla prefijada (300,9). Diciembre (234,4) no es validación limpia para S4A.
+
+
+### Escalera de riesgo para la subida
+
+| Candidata | Estado metodológico | Qué apuesta |
+|---|---|---|
+| V1 (`candidate_v1`) | protocolo V1, sin mezcla | no apuesta por el artefacto BLOCK = SCHED; peor si persiste (lo esperable) |
+| V2 S_mix (`candidate_v2`) | congelada y confirmada en diciembre (primera apertura) | apuesta por el artefacto; celdas sin tratar |
+| S2A_mix | finalista por la regla prefijada de la etapa 2; diciembre = segunda apertura | + celdas planas + congestión; mejora confirmada |
+| S3A_mix | post-hoc (umbral fijo tras ver diciembre) | + banda de retraso fija: experimental |
+| S4A_mix (`candidate_v3`) | hipótesis post-hoc, parámetro anidado | + banda con umbral elegido en entrenamiento: experimental, la mejor apuesta |
 
 ## 10. Holdout de diciembre (segunda apertura; confirmación, no selección)
 
@@ -288,10 +352,13 @@ intacto. Se abre una segunda vez, una sola, con la finalista congelada por la re
 | S3_mix | 237.9 | 150.5 | 107.6 | 88.88 | 98.15 | 230.5 | 348.3 | 3810.6 | 2 |
 | S3A_mix | 234.4 | 147.9 | 105.4 | 89.28 | 98.20 | 225.2 | 367.9 | 3897.3 | 2 |
 | S3A_mix_4 | 235.3 | 148.6 | 106.0 | 89.19 | 98.19 | 227.0 | 357.5 | 3854.0 | 2 |
+| S4_mix | 237.9 | 150.5 | 107.6 | 88.88 | 98.15 | 230.5 | 348.3 | 3810.6 | 2 |
+| S4A_mix | 234.4 | 147.9 | 105.4 | 89.28 | 98.20 | 225.2 | 367.9 | 3897.3 | 2 |
+| S4A_mix_4 | 235.3 | 148.6 | 106.0 | 89.19 | 98.19 | 227.0 | 357.5 | 3854.0 | 2 |
 
 ## 11. Decisión
 
-**crear candidate_v3 (S3A_mix)** — Etapa 2 sobre V2: clasificador de régimen con desplazamiento de fecha y celdas jerárquicas por banda de retraso (α = 20) + rama normal con features de congestión (direct_normal_s y residual_normal_s, filas de clase 0 ≤ 3 h). Desarrollo pooled (may–nov): S_mix 320,9 → S3A_mix 297,1 s (−23,8 s; 7/7 folds; P(mejora) = 1,000; IC 95 % Δ −37,2..−10,5); diciembre (segunda apertura, no limpia para S3A): 241,1 → 234,4 s. La finalista por la regla prefijada era S2A_mix (300,9 / 237,8); S3A_mix se definió tras abrir diciembre y se eligió de forma documentada (final_choice.json). V1 y candidate_v2 intactas.
+**crear candidate_v3 (S4A_mix: hipótesis post-hoc con parámetro anidado)** — Etapa 2 sobre V2. Finalista rigurosa por la regla prefijada: S2A_mix (celdas planas + congestión; desarrollo pooled 320,9 → 300,9 s; 7/7 folds; P(mejora)=1,000; cumple c1–c6, bootstrap y el c8 redefinido). S3A_mix (umbral fijo 12 h elegido tras abrir diciembre) se etiqueta EXPERIMENTAL/post-hoc. S4A_mix repite la hipótesis de bandas con el umbral elegido por log-loss leave-one-out dentro de cada ventana de entrenamiento (May–Aug y Dec: 12 h; Sep–Nov: 18 h; todo 2025: 12 h): desarrollo pooled 297,8 s (−23,1 vs S_mix; 7/7 folds; P(mejora)=1,000; IC −36/−10), cumple todos los criterios requeridos frente a S_mix y V1P. Diciembre (234,4) es segunda apertura y no valida la hipótesis. Con todo 2025 el umbral anidado coincide con 12 h, por lo que candidate_v3 es byte-idéntica a la generada con S3A_mix (misma sha256). V1 y candidate_v2 intactas. Nada subido al bucket.
 
 
 `submissions/candidate_v3.parquet` · sha256 `165c6e298a033d2ad96765e3ff3652615f20d6411a15ad6acd144b76ef920ee0` · V1 intacta: `d482a42b3230d7e9eeba3890a66fc5ab4b9362d5e54a33c0151a265cfb5c4294` · V2 intacta: `e1db051a419e18d7314b56fb5b8105c93170f99c4e4254b1aeab7f8fc7f84752`

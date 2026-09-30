@@ -208,18 +208,29 @@ Cambios (mismo protocolo de 8 folds; V2 intacta, sus componentes se reutilizan d
 * **2b — rama normal con congestión** (`A_surface`): `direct_normal_s` y `residual_normal_s` con features V1 +
   `src/v2_features.py`, entrenados solo con clase 0 y y ≤ 3 h. Por sí solas −1,8 s (7/7 folds): las features horarias
   de V1 ya capturaban casi toda la congestión; mejoran MAE (−2,3 s) y cobertura ≤ 5 min (+0,36 pp).
-* **2c — celdas jerárquicas por banda de retraso (post-hoc)**: al abrir diciembre con la finalista congelada
-  (S2A_mix) se vio que la celda plana reparte la masa de clase 2 a filas de retraso corto (en 2025: 1/43 con
-  retraso < 12 h frente a 10/25 con ≥ 12 h). `proba_b20` añade una segunda actualización por banda (≥ 12 h) con el
-  mismo α. Se definió DESPUÉS de abrir diciembre, así que diciembre no es validación limpia para ella; la elección
-  queda documentada en `final_choice.json` (la regla prefijada habría elegido S2A_mix).
+* **2c — celdas jerárquicas por banda de retraso (post-hoc, EXPERIMENTAL)**: al abrir diciembre con la finalista
+  congelada (S2A_mix) se vio que la celda plana reparte la masa de clase 2 a filas de retraso corto (en 2025: 1/43 con
+  retraso < 12 h frente a 10/25 con ≥ 12 h). `proba_b20` añade una segunda actualización por banda con umbral FIJO
+  de 12 h elegido tras ver diciembre: S3A_mix se etiqueta como experimental, no como mejora confirmada.
+* **2d — umbral elegido dentro de cada ventana de entrenamiento (validación anidada)**: `proba_n20` repite el
+  esquema de 2c, pero el umbral (6/9/12/18/24 h, o celda plana) se elige por log-loss leave-one-out **solo con las
+  filas de celda del bloque de entrenamiento** de cada fold (May–Aug y Dec eligen 12 h; Sep–Nov, 18 h; todo 2025, 12 h).
+  Diciembre nunca interviene en la elección del parámetro; lo que sigue siendo post-hoc es la hipótesis, y eso solo lo
+  valida el ranking 2026. S4A_mix es la candidata final (`final_choice.json`); la regla prefijada elige S2A_mix.
+* **c8 redefinido** (propuesta de revisión externa, aplicada a posteriori sin cambiar la finalista de la regla): el
+  criterio original «la ganancia no depende de pocas filas» es inaplicable a una corrección de régimen raro; se
+  sustituye por «no dañar al grueso» (RMSE de la población normal no empeora > 1 s y ≤ 2 de 10 aeropuertos empeoran).
 
-| RMSE (s) | V1P | S_mix (V2) | S2A_mix (regla prefijada) | **S3A_mix (candidate_v3)** |
-|---|---:|---:|---:|---:|
-| Desarrollo pooled (may–nov) | 390.6 | 320.9 | 300.9 | **297.1** |
-| Diciembre (segunda apertura) | 332.2 | 241.1 | 237.8 | **234.4** |
-| MAE / cobertura ≤ 5 min (desarrollo) | 161.1 / 87.71 % | 159.3 / 87.80 % | 156.8 / 88.16 % | **156.8 / 88.16 %** |
-| Folds no peores que S_mix · bootstrap P(mejora) | — | — | 7/7 · 1.000 | 7/7 · 1.000 (IC 95 % Δ −37 a −11 s) |
+| RMSE (s) | V1P | S_mix (V2) | S2A_mix (regla prefijada) | S3A_mix (experimental) | **S4A_mix (candidate_v3)** |
+|---|---:|---:|---:|---:|---:|
+| Desarrollo pooled (may–nov) | 390.6 | 320.9 | 300.9 | 297.1 | **297.8** |
+| Diciembre (segunda apertura) | 332.2 | 241.1 | 237.8 | 234.4 | **234.4** |
+| MAE / cobertura ≤ 5 min (desarrollo) | 161.1 / 87.71 % | 159.3 / 87.80 % | 156.8 / 88.16 % | 156.8 / 88.16 % | **156.8 / 88.16 %** |
+| Folds no peores que S_mix · bootstrap P(mejora) | — | — | 7/7 · 1.000 | 7/7 · 1.000 | 7/7 · 1.000 (IC 95 % Δ −36 a −10 s) |
+
+Escalera de riesgo para la subida: V1 (no apuesta por el artefacto) < V2 S_mix (referencia segura, confirmada) <
+S2A_mix (mejora confirmada por la regla prefijada) < S3A/S4A (experimentales; S4A es la mejor apuesta). Con todo 2025 el
+umbral anidado coincide con 12 h, así que `candidate_v3.parquet` es byte-idéntica a la versión S3A (misma SHA-256).
 
 Advertencias: la ganancia sigue concentrada en pocas filas (celda LIRF: 68 filas en 2025, **25 en el ranking**);
 depende de que el artefacto BLOCK = SCHED persista en 2026 (las llegadas del ranking, donde BLOCK_TIME es visible,
@@ -229,7 +240,7 @@ lo muestran con la misma tasa que en 2025); una sola fila de 60 000 s de error m
 python src/v3_protocol.py --variants S2_mixture A_surface --resume            # 7 folds de desarrollo (≈ 2,5 h, 2 CPU)
 python src/v3_analysis.py --freeze                                            # criterios vs S_mix y V1P; congela la finalista
 python src/v3_protocol.py --variants S2_mixture A_surface --folds Dec --resume && python src/v3_analysis.py --holdout
-python src/v3_analysis.py --holdout --final-choice S3A_mix --reason "..."     # elección documentada (post-hoc)
+python src/v3_analysis.py --holdout --final-choice S4A_mix --reason "..."     # elección documentada (post-hoc, parámetro anidado)
 python src/v3_final.py train && python src/v3_final.py submit                # bundles V3 + candidate_v3.parquet
 python src/v3_report.py && python -m pytest tests -q
 ```

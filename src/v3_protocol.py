@@ -67,7 +67,9 @@ ALPHAS = (0, 5, 20, 100)
 ALPHA_PRIMARY = 20
 RATE2_PSEUDO = 200
 BAND_SEC = 12 * 3600.0       # etapa 2c: celdas jerárquicas por banda de retraso (MVT − SCHED ≥ 12 h) dentro de la celda del aeropuerto
-CELL_MODES = ("flat", "band")
+BAND_GRID_H = (6, 9, 12, 18, 24)   # etapa 2d: rejilla de umbrales (h); el umbral se elige DENTRO de cada ventana de entrenamiento (LOO) o se
+                                   # mantiene la celda plana si ningún umbral reduce la log-loss LOO. Nunca se usa el mes de validación.
+CELL_MODES = ("flat", "band", "nested")
 EXP_DIR = MODELS_DIR / "experiments" / "v3"
 PRED_DIR = EXP_DIR / "preds"
 OUT_DIR = OUTPUTS_DIR / "experiments" / "v3"
@@ -146,18 +148,62 @@ class RegimeClassifier2:
         self.rate2 = {(r["ADEP_mvt"], int(r["has_aobt3"]), int(r["_shift"])): (r["k"] + RATE2_PSEUDO * glob) / (r["n"] + RATE2_PSEUDO)
                       for r in g.iter_rows(named=True)}
         self.rate2_global = glob
-        cell_df = lab_df.filter(shifted_no_aobt3_expr()).with_columns((pl.col("mvt_minus_sched").cast(pl.Float64) >= BAND_SEC).cast(pl.Int8).alias("_band"))
+        cell_df = lab_df.filter(shifted_no_aobt3_expr())
         agg = [pl.len().alias("n"), (pl.col("regime_class") == 1).sum().alias("k1"), (pl.col("regime_class") == 2).sum().alias("k2")]
         c = cell_df.group_by("ADEP_mvt").agg(agg)
         self.cells = {r["ADEP_mvt"]: (int(r["n"]), int(r["k1"]), int(r["k2"])) for r in c.iter_rows(named=True)}
-        cb = cell_df.group_by("ADEP_mvt", "_band").agg(agg)
-        self.cells_band = {(r["ADEP_mvt"], int(r["_band"])): (int(r["n"]), int(r["k1"]), int(r["k2"])) for r in cb.iter_rows(named=True)}
+        self.cells_band_grid = {}
+        for h in sorted(set(BAND_GRID_H) | {int(BAND_SEC // 3600)}):
+            cb = cell_df.with_columns((pl.col("mvt_minus_sched").cast(pl.Float64) >= h * 3600.0).cast(pl.Int8).alias("_band")).group_by("ADEP_mvt", "_band").agg(agg)
+            self.cells_band_grid[h] = {(r["ADEP_mvt"], int(r["_band"])): (int(r["n"]), int(r["k1"]), int(r["k2"])) for r in cb.iter_rows(named=True)}
+        self.cells_band = self.cells_band_grid[int(BAND_SEC // 3600)]          # modo "band": umbral fijo de la etapa 2c (post-hoc)
+        # etapa 2d: selección anidada del umbral con las filas de celda del BLOQUE DE ENTRENAMIENTO (log-loss leave-one-out)
+        self.loo = self._loo_select(cell_df)
+        self.band_sec_selected = None if self.loo["selected_h"] is None else self.loo["selected_h"] * 3600.0
         self.info = {"n_train": int(lab.size), "n_class1": int((lab == 1).sum()), "n_class2": int((lab == 2).sum()),
                      "train_seconds": round(time.time() - t0, 1), "alpha": self.alpha,
                      "cells_shifted_no_aobt3": {k: {"n": v[0], "k1": v[1], "k2": v[2]} for k, v in self.cells.items()},
                      "cells_band": {f"{k[0]}|band{k[1]}": {"n": v[0], "k1": v[1], "k2": v[2]} for k, v in self.cells_band.items()},
+                     "nested_selection": self.loo,
                      "feature_importance": dict(zip(feats, np.round(self.clf.get_feature_importance(), 3).tolist()))}
         return self
+
+    def _loo_select(self, cell_df: pl.DataFrame) -> dict:
+        """Log-loss leave-one-out sobre las filas de celda del bloque de entrenamiento para {plana} ∪ {banda h : h ∈ BAND_GRID_H}.
+        Prior de cada fila = (p1 del clasificador, p2 de la tabla); las cuentas excluyen la fila evaluada. Empates → plana (más simple)."""
+        out = {"n_cell_rows": int(cell_df.height), "grid_h": list(BAND_GRID_H), "loo_logloss": {}, "selected_h": None}
+        if cell_df.height == 0:
+            return out
+        a = self.alpha
+        p1_raw, p2_tab, _ = self._raw(cell_df)
+        cls = cell_df.select(regime_class_expr())["regime_class"].to_numpy()
+        apts = cell_df["ADEP_mvt"].to_numpy(); delay = cell_df["mvt_minus_sched"].cast(pl.Float64).fill_null(0.0).to_numpy()
+        eps = 1e-6
+
+        def loss(h):
+            tot = 0.0
+            for i in range(cls.size):
+                n, k1, k2 = self.cells[apts[i]]
+                n1, k11, k21 = n - 1, k1 - int(cls[i] == 1), k2 - int(cls[i] == 2)
+                c1 = (k11 + a * p1_raw[i]) / (n1 + a); c2 = (k21 + a * p2_tab[i]) / (n1 + a)
+                if h is not None:
+                    b = int(delay[i] >= h * 3600.0)
+                    nb, kb1, kb2 = self.cells_band_grid[h].get((apts[i], b), (0, 0, 0))
+                    nb1, kb11, kb21 = nb - 1, kb1 - int(cls[i] == 1), kb2 - int(cls[i] == 2)
+                    c1 = (kb11 + a * c1) / (nb1 + a); c2 = (kb21 + a * c2) / (nb1 + a)
+                p = np.clip([1 - c1 - c2, c1, c2], eps, 1.0)
+                tot -= float(np.log(p[cls[i]]))
+            return tot / cls.size
+        out["loo_logloss"]["flat"] = loss(None)
+        for h in BAND_GRID_H:
+            out["loo_logloss"][f"band_{h}h"] = loss(h)
+        best_h, best = None, out["loo_logloss"]["flat"]
+        for h in BAND_GRID_H:
+            v = out["loo_logloss"][f"band_{h}h"]
+            if v < best - 1e-12:
+                best_h, best = h, v
+        out["selected_h"] = best_h
+        return out
 
     def _raw(self, df: pl.DataFrame) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         feats = self.num + self.cat
@@ -171,19 +217,27 @@ class RegimeClassifier2:
 
     def predict_proba(self, df: pl.DataFrame, alpha: float | None = None, mode: str = "flat") -> np.ndarray:
         """mode="flat": p_celda = (k + α·prior)/(n + α) con prior = (p1 del clasificador, p2 de la tabla).
-        mode="band" (jerárquico, etapa 2c): p_banda = (k_banda + α·p_celda)/(n_banda + α), banda = retraso ≥ 12 h."""
+        mode="band" (jerárquico, etapa 2c, umbral fijo 12 h post-hoc): p_banda = (k_banda + α·p_celda)/(n_banda + α).
+        mode="nested" (etapa 2d): igual que "band" con el umbral elegido por LOO en el bloque de entrenamiento; si la
+        selección eligió la celda plana, coincide con "flat"."""
         assert mode in CELL_MODES
         a = self.alpha if alpha is None else float(alpha)
+        if mode == "nested":
+            sec, table = self.band_sec_selected, (None if self.band_sec_selected is None else self.cells_band_grid[int(round(self.band_sec_selected / 3600.0))])
+        elif mode == "band":
+            sec, table = BAND_SEC, self.cells_band
+        else:
+            sec, table = None, None
         p1_raw, p2, incell = self._raw(df)
         p1 = np.clip(p1_raw * (1 - p2), 0, 1)
         if a > 0 and incell.any():
             apts = df["ADEP_mvt"].to_numpy()
-            band = (df["mvt_minus_sched"].cast(pl.Float64).fill_null(0.0).to_numpy() >= BAND_SEC).astype(int)
+            band = None if sec is None else (df["mvt_minus_sched"].cast(pl.Float64).fill_null(0.0).to_numpy() >= sec).astype(int)
             for i in np.where(incell)[0]:
                 n, k1, k2 = self.cells.get(apts[i], (0, 0, 0))
                 c1 = (k1 + a * p1_raw[i]) / (n + a); c2 = (k2 + a * p2[i]) / (n + a)
-                if mode == "band":
-                    nb, kb1, kb2 = self.cells_band.get((apts[i], band[i]), (0, 0, 0))
+                if table is not None:
+                    nb, kb1, kb2 = table.get((apts[i], band[i]), (0, 0, 0))
                     c1 = (kb1 + a * c1) / (nb + a); c2 = (kb2 + a * c2) / (nb + a)
                 p1[i], p2[i] = c1, c2
         p0 = np.clip(1 - p1 - p2, 0, 1)
@@ -222,6 +276,7 @@ def run_unit(variant: str, fold: str, feats: pl.DataFrame, resume: bool) -> list
         if kind == "proba":
             files = {("flat", a): PRED_DIR / f"{variant}__{fold}__proba_a{a}.npy" for a in ALPHAS}
             files[("band", ALPHA_PRIMARY)] = PRED_DIR / f"{variant}__{fold}__proba_b{ALPHA_PRIMARY}.npy"
+            files[("nested", ALPHA_PRIMARY)] = PRED_DIR / f"{variant}__{fold}__proba_n{ALPHA_PRIMARY}.npy"
             if resume and all(f.exists() for f in files.values()):
                 print(f"  {variant:12s} {fold} proba (cache)", flush=True); continue
             t0 = time.time()
@@ -230,7 +285,7 @@ def run_unit(variant: str, fold: str, feats: pl.DataFrame, resume: bool) -> list
             from sklearn.metrics import log_loss, roc_auc_score
             for (mode, a), f in files.items():
                 out = m.predict_proba(val, alpha=a, mode=mode); np.save(f, out.astype(np.float32))
-                tag = f"proba_{'a' if mode == 'flat' else 'b'}{a}"
+                tag = f"proba_{ {'flat': 'a', 'band': 'b', 'nested': 'n'}[mode] }{a}"
                 auc1 = float(roc_auc_score(lab == 1, out[:, 1])) if (lab == 1).any() else np.nan
                 auc2 = float(roc_auc_score(lab == 2, out[:, 2])) if (lab == 2).any() else np.nan
                 rows.append({"variant": variant, "fold": fold, "model": tag, "n": int(y.size), "fit_seconds": round(time.time() - t0, 1),
@@ -239,7 +294,7 @@ def run_unit(variant: str, fold: str, feats: pl.DataFrame, resume: bool) -> list
                              "obs_rate2": float((lab == 2).mean()), "n_train": m.info["n_train"], "n_class1": m.info["n_class1"], "n_class2": m.info["n_class2"]})
                 print(f"  {variant:12s} {fold} {tag:10s} logloss={rows[-1]['logloss']:.4f} auc1={auc1:.3f} auc2={auc2:.3f} "
                       f"p2={rows[-1]['mean_p2']:.5f}/{rows[-1]['obs_rate2']:.5f}", flush=True)
-            print(f"  {variant:12s} {fold} proba fit={m.info['train_seconds']}s celdas={m.info['cells_shifted_no_aobt3']} bandas={m.info['cells_band']}", flush=True)
+            print(f"  {variant:12s} {fold} proba fit={m.info['train_seconds']}s celdas={m.info['cells_shifted_no_aobt3']} | selección anidada: {m.loo}", flush=True)
             continue
         f = PRED_DIR / f"{variant}__{fold}__{kind}.npy"
         if resume and f.exists():

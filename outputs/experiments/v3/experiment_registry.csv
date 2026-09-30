@@ -14,3 +14,6 @@ S2A_mix_4,S2+A,proba2 alpha=20 + normal 4 componentes,true
 S3_mix,"S3 (2c, post-hoc)","proba2 celdas jerárquicas por banda de retraso (>=12 h), alpha=20 + normal_v2",false
 S3A_mix,"S3+A (2c, post-hoc)","proba2 celdas jerárquicas por banda (>=12 h), alpha=20 + normal_s",false
 S3A_mix_4,"S3+A (2c, post-hoc)","proba2 celdas jerárquicas por banda (>=12 h), alpha=20 + normal 4 componentes",false
+S4_mix,"S4 (2d, hipótesis post-hoc, umbral anidado)","proba2 celdas jerárquicas con umbral elegido por LOO en el bloque de entrenamiento (o plana), alpha=20 + normal_v2",false
+S4A_mix,"S4+A (2d, hipótesis post-hoc, umbral anidado)","proba2 celdas jerárquicas con umbral anidado, alpha=20 + normal_s",false
+S4A_mix_4,"S4+A (2d, hipótesis post-hoc, umbral anidado)","proba2 celdas jerárquicas con umbral anidado, alpha=20 + normal 4 componentes",false

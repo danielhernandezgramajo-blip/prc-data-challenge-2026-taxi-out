@@ -51,7 +51,11 @@ COMPONENTS = {  # candidata → (proba, componentes de la rama normal); proba2 =
     "S3_mix": ("proba2_band", ["direct_normal", "residual_v1"]),
     "S3A_mix": ("proba2_band", ["direct_normal_s", "residual_normal_s"]),
     "S3A_mix_4": ("proba2_band", ["direct_normal", "residual_v1", "direct_normal_s", "residual_normal_s"]),
+    "S4_mix": ("proba2_nested", ["direct_normal", "residual_v1"]),
+    "S4A_mix": ("proba2_nested", ["direct_normal_s", "residual_normal_s"]),
+    "S4A_mix_4": ("proba2_nested", ["direct_normal", "residual_v1", "direct_normal_s", "residual_normal_s"]),
 }
+PROBA_MODE = {"proba2": "flat", "proba2_band": "band", "proba2_nested": "nested"}
 
 
 def _sha(path: Path) -> str:
@@ -79,8 +83,9 @@ def save_classifier2(m: RegimeClassifier2, bdir: Path, check_df: pl.DataFrame) -
     (bdir / "rate2.json").write_text(json.dumps({"global": m.rate2_global, "pseudo": 200,
         "table": [{"ADEP_mvt": k[0], "has_aobt3": k[1], "shifted": k[2], "rate": v} for k, v in m.rate2.items()]}, indent=1), encoding="utf-8")
     (bdir / "cells.json").write_text(json.dumps({"alpha": m.alpha, "cells": {k: {"n": v[0], "k1": v[1], "k2": v[2]} for k, v in m.cells.items()},
-        "cells_band": [{"ADEP_mvt": k[0], "band": k[1], "n": v[0], "k1": v[1], "k2": v[2]} for k, v in m.cells_band.items()], "band_sec": BAND_SEC}, indent=1), encoding="utf-8")
-    p = np.column_stack([m.predict_proba(check_df, mode="flat"), m.predict_proba(check_df, mode="band")])
+        "cells_band_grid": {str(h): [{"ADEP_mvt": k[0], "band": k[1], "n": v[0], "k1": v[1], "k2": v[2]} for k, v in t.items()] for h, t in m.cells_band_grid.items()},
+        "band_sec": BAND_SEC, "band_sec_selected": m.band_sec_selected, "nested_selection": m.loo}, indent=1), encoding="utf-8")
+    p = np.column_stack([m.predict_proba(check_df, mode="flat"), m.predict_proba(check_df, mode="band"), m.predict_proba(check_df, mode="nested")])
     np.savez_compressed(bdir / "check_predictions.npz", ids=check_df[ID_COL].to_numpy(), proba=p)
     man = {"model_name": "regime_classifier2", "features": m.num + m.cat, "num_cols": m.num, "cat_cols": m.cat, "iterations": m.iterations,
            "alpha": m.alpha, "trained_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"), "versions": env_versions(),
@@ -101,7 +106,9 @@ def load_classifier2(bdir: Path) -> RegimeClassifier2:
     m.rate2 = {(t["ADEP_mvt"], int(t["has_aobt3"]), int(t["shifted"])): t["rate"] for t in r["table"]}; m.rate2_global = r["global"]
     c = json.loads((bdir / "cells.json").read_text(encoding="utf-8"))
     m.cells = {k: (v["n"], v["k1"], v["k2"]) for k, v in c["cells"].items()}
-    m.cells_band = {(t["ADEP_mvt"], int(t["band"])): (t["n"], t["k1"], t["k2"]) for t in c["cells_band"]}
+    m.cells_band_grid = {int(h): {(t["ADEP_mvt"], int(t["band"])): (t["n"], t["k1"], t["k2"]) for t in rows} for h, rows in c["cells_band_grid"].items()}
+    m.cells_band = m.cells_band_grid[int(BAND_SEC // 3600)]
+    m.band_sec_selected = c["band_sec_selected"]; m.loo = c["nested_selection"]
     assert c["band_sec"] == BAND_SEC
     return m
 
@@ -111,7 +118,7 @@ def verify_classifier2(bdir: Path, df: pl.DataFrame) -> dict:
     chk = np.load(bdir / "check_predictions.npz")
     order = pl.DataFrame({ID_COL: chk["ids"], "_o": np.arange(len(chk["ids"]))})
     sub = df.join(order, on=ID_COL, how="inner").sort("_o").drop("_o")
-    p = np.column_stack([m.predict_proba(sub, mode="flat"), m.predict_proba(sub, mode="band")])
+    p = np.column_stack([m.predict_proba(sub, mode="flat"), m.predict_proba(sub, mode="band"), m.predict_proba(sub, mode="nested")])
     return {"ok": bool(np.allclose(p, chk["proba"], atol=1e-9)), "max_abs_diff": float(np.max(np.abs(p - chk["proba"])))}
 
 
@@ -205,14 +212,14 @@ def cmd_train() -> None:
         gc.collect()
     elif need_surface:
         print("bundles de superficie ya presentes (reanudación):", [c for c in normal_parts if c.endswith("_s")], flush=True)
-    if proba_kind in ("proba2", "proba2_band") and not (FINAL_DIR / "regime_classifier2" / "manifest.json").exists():
+    if proba_kind in PROBA_MODE and not (FINAL_DIR / "regime_classifier2" / "manifest.json").exists():
         train_all = load_features_v3("train", surface=False)
         train, _ = apply_outlier_strategy(train_all, STRATEGY)
         rank = load_features_v3("rank", surface=False)
         clf = RegimeClassifier2(FEATURE_NUM_COLS, FEATURE_CAT_COLS, alpha=ALPHA_PRIMARY).fit(train)
         manifests["regime_classifier2"] = save_classifier2(clf, FINAL_DIR / "regime_classifier2", rank.head(50_000))
         v = verify_classifier2(FINAL_DIR / "regime_classifier2", rank); assert v["ok"], v
-        print(f"regime_classifier2: {clf.info['n_train']:,} filas, celdas={clf.info['cells_shifted_no_aobt3']} | verificación: {v}", flush=True)
+        print(f"regime_classifier2: {clf.info['n_train']:,} filas, celdas={clf.info['cells_shifted_no_aobt3']} | selección anidada: {clf.loo} | verificación: {v}", flush=True)
     sel = {"selected": name, "proba": proba_kind, "normal_components": normal_parts,
            "definition": "p0*normal + p1*(MVT-SCHED) + p2*(86400+normal); normal = media simple de normal_components", "alpha": ALPHA_PRIMARY,
            "clip_negative_predictions": True, "frozen": json.loads((OUT_DIR / "finalist_frozen.json").read_text(encoding="utf-8")),
@@ -248,9 +255,11 @@ def predict_v3(sel: dict) -> tuple[np.ndarray, dict, dict]:
         ver["residual_v1"] = ModelBundle.verify(V1_RESIDUAL, rank); assert ver["residual_v1"]["ok"] and ver["residual_v1"]["sha256_match"]
         m, _ = ModelBundle.load(V1_RESIDUAL); comps["residual_v1"] = m.predict(rank)
     normal = np.mean([comps[c] for c in normal_parts], axis=0)
-    if proba_kind in ("proba2", "proba2_band"):
+    if proba_kind in PROBA_MODE:
         ver["regime_classifier2"] = verify_classifier2(FINAL_DIR / "regime_classifier2", rank); assert ver["regime_classifier2"]["ok"]
-        p = load_classifier2(FINAL_DIR / "regime_classifier2").predict_proba(rank, mode="band" if proba_kind == "proba2_band" else "flat")
+        clf = load_classifier2(FINAL_DIR / "regime_classifier2")
+        p = clf.predict_proba(rank, mode=PROBA_MODE[proba_kind])
+        ver["regime_classifier2"]["mode"] = PROBA_MODE[proba_kind]; ver["regime_classifier2"]["band_sec_selected"] = clf.band_sec_selected
     else:
         ver["regime_classifier_v2"] = verify_classifier_v2(V2_FINAL / "regime_classifier", rank); assert ver["regime_classifier_v2"]["ok"]
         p = load_classifier_v2(V2_FINAL / "regime_classifier").predict_proba(rank)
