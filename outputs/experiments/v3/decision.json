@@ -18,7 +18,9 @@
     "rows": 344841,
     "candidate_v1_sha256_unchanged": "d482a42b3230d7e9eeba3890a66fc5ab4b9362d5e54a33c0151a265cfb5c4294",
     "candidate_v2_sha256_unchanged": "e1db051a419e18d7314b56fb5b8105c93170f99c4e4254b1aeab7f8fc7f84752",
-    "uploaded_to_bucket": false
+    "uploaded_to_bucket": true,
+    "remote_name": "optimistic-dragon_v1.parquet",
+    "uploaded_at_utc": "2026-10-01T14:46:48Z"
   },
   "at_utc": "2026-09-30T16:32:01+00:00",
   "protocol_amendments": "outputs/experiments/v3/protocol_amendments.md (E1–E5; c8 = diagnóstico, no veto; política de subida)",
