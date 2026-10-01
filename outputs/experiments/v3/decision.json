@@ -102,5 +102,15 @@
       }
     }
   },
-  "leaderboard_result": null
+  "leaderboard_result": {
+    "submission": "optimistic-dragon_v1.parquet",
+    "model": "candidate_v3 (S4A_mix)",
+    "status": "Succeeded",
+    "score_rmse_s": 317.9925,
+    "used_pairs": 344841,
+    "test_set": "prc-2026-testsets/truthing.parquet",
+    "source": "prc-2026-optimistic-dragon/optimistic-dragon_v1.parquet_result.json (generado por el evaluador del concurso)",
+    "recorded_at_utc": "2026-10-01T15:46:29+00:00",
+    "note": "Registrado una sola vez según protocol_amendments.md; no se usa para seleccionar ni ajustar nada."
+  }
 }
