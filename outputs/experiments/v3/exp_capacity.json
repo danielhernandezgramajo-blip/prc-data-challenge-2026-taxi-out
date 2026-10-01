@@ -1,0 +1,32 @@
+{
+  "A_actual": {
+    "rmse_clase0_julio": 273.9154140399946,
+    "rmse_grueso_le1h": 241.93837476176716,
+    "mae_grueso": 164.94451160277586,
+    "rmse_20_60min": 368.3692261976183,
+    "fit_s": 280,
+    "n_feats": 29
+  },
+  "B_capacidad": {
+    "rmse_clase0_julio": 268.29069587041204,
+    "rmse_grueso_le1h": 237.26835817074118,
+    "mae_grueso": 161.1008777322552,
+    "rmse_20_60min": 361.9426481758645,
+    "fit_s": 1059,
+    "n_feats": 29
+  },
+  "C_cap+escala": {
+    "rmse_clase0_julio": 262.3542083034647,
+    "rmse_grueso_le1h": 232.61074251479084,
+    "mae_grueso": 158.5628668280809,
+    "rmse_20_60min": 351.9790210028495,
+    "fit_s": 1121,
+    "n_feats": 33,
+    "importance_extra": {
+      "min_since_prev_arr": 2.46,
+      "prev_arr_delay_min": 0.67,
+      "prev_arr_taxi_in": 0.97,
+      "FLIGHT_mvt": 2.96
+    }
+  }
+}
