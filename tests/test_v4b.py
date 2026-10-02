@@ -205,3 +205,23 @@ def test_v4b_outputs_consistent():
     assert not list((ROOT / "submissions").glob("candidate_v4*")) if (ROOT / "submissions").exists() else True
     sel = json.loads((V4B / "stage2_selection.json").read_text())
     assert dec["primary"]["C1"] == sel["C1"]["key"] and dec["primary"]["C2"] == sel["C2"]["key"]
+
+
+# ---------------------------------------------------------------------------
+# 7. Candidata final: combinación de C2 (celda → mezcla de V3; resto → b + p·Δ) y script sin subidas
+# ---------------------------------------------------------------------------
+def test_final_combine_and_script_has_no_upload():
+    from v4b_final import combine
+    from v2_protocol import DAY_SEC
+    P0 = np.array([[0.9, 0.1, 0.0], [0.2, 0.5, 0.3], [0.9, 0.1, 0.0]])
+    b = np.array([900.0, 900.0, 900.0]); p = np.array([0.25, 0.9, 0.0]); s = np.array([4500.0, 50000.0, -1e6])
+    cell = np.array([False, True, False])
+    out = combine(P0, b, p, s, cell)
+    assert np.isclose(out[0], 900 + 0.25 * (4500 - 900))
+    assert np.isclose(out[1], 0.2 * 900 + 0.5 * 50000 + 0.3 * (DAY_SEC + 900))     # celda: probabilidades de V3
+    assert out[2] == 900.0                                                       # p = 0 → rama normal
+    out2 = combine(P0, b, np.array([0.25, 0.9, 1.0]), s, cell)
+    assert out2[2] == 0.0                                                        # recorte a ≥ 0
+    sh = (ROOT / "src" / "v4b_run_candidate.sh").read_text()
+    for bad in ("mc cp", "mc put", "aws s3", "s3.opensky-network.org", "git push"):
+        assert bad not in sh
