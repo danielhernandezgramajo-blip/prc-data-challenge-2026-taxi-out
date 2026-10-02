@@ -1,0 +1,116 @@
+{
+  "version": "v4",
+  "generated_at_utc": "2026-10-02T01:02:48+00:00",
+  "base_head": "056bbc4",
+  "hypothesis": "BLOCK oculto = mezcla de expertos sobre fuentes visibles (AOBT_3, LOBT, EOBT_1, IOBT, SCHED, ±1 día, ninguna)",
+  "gate_A": {
+    "A1_copy_mass_non_sched_pct": 5.770029004941696,
+    "A1_copy_mass_sum_non_sched_corrected_pct": 16.809597897153715,
+    "A1_pass": true,
+    "A2_rmse_w_v3": 304.42181040031323,
+    "A2_rmse_w_oracle": 299.17443554727754,
+    "A2_delta_s": -5.247374853035694,
+    "A2_delta_ci95": [
+      -5.79390142501791,
+      -4.736176515368355
+    ],
+    "A2_threshold_s": -15.0,
+    "A2_pass": false,
+    "pass": false
+  },
+  "decision": "STOP en la Etapa A: hipótesis no viable; no se ejecutan las Etapas B–E; no se genera candidate_v4",
+  "configs_run": [],
+  "configs_not_run": [
+    "C0",
+    "C1",
+    "C2",
+    "C3",
+    "C4",
+    "C5"
+  ],
+  "reference_c0_oof_origin_growing": {
+    "rmse_w": 304.42181040031323,
+    "rmse_jul": 350.21856060446106,
+    "rmse_dec_proxy_jan": 234.42909254351824
+  },
+  "oracle_ceilings_rmse_w": {
+    "A2_nonSCHED_tau10": {
+      "rmse_w": 299.1744355470966,
+      "delta_ci95": [
+        -5.79390142501791,
+        -4.736176515368355
+      ]
+    },
+    "A2_nonSCHED_tau30": {
+      "rmse_w": 298.42551974478226,
+      "delta_ci95": [
+        -6.546969380450631,
+        -5.467533633830946
+      ]
+    },
+    "A2_nonSCHED_tau60": {
+      "rmse_w": 292.4563098681431,
+      "delta_ci95": [
+        -12.901473324449714,
+        -11.149695646196626
+      ]
+    },
+    "B_all_anchors": {
+      "rmse_w": 269.24001970843557,
+      "delta_ci95": [
+        -44.88026574323736,
+        -26.57352163806224
+      ]
+    },
+    "C_dayshift": {
+      "rmse_w": 257.0306621668444,
+      "delta_ci95": [
+        -66.42768982768752,
+        -31.82568173480188
+      ]
+    },
+    "C2_rest_normal": {
+      "rmse_w": 237.5527222793641,
+      "delta_ci95": [
+        -89.17205494177232,
+        -46.00830407891536
+      ]
+    },
+    "D_stage3_bulk": {
+      "rmse_w": 230.15010991333185,
+      "delta_ci95": [
+        -96.59749711122926,
+        -53.43325661353725
+      ]
+    },
+    "E_perfect_tail": {
+      "rmse_w": 205.73018537239014,
+      "delta_ci95": [
+        -123.68458657514482,
+        -75.90371594019022
+      ]
+    }
+  },
+  "arvt": "no evaluado (Etapas B/C no ejecutadas); ARVT_1/3 no son fuentes de BLOCK",
+  "candidate_v4": null,
+  "uploaded_to_bucket": false,
+  "pushed": false,
+  "leaderboard_used_for_selection": false,
+  "external_data_used": false,
+  "protected_files_verification": {
+    "environment": "copia de trabajo git (autoritativa)",
+    "files": {
+      "submissions/candidate_v1.parquet": "ok",
+      "submissions/candidate_v2.parquet": "ok",
+      "submissions/candidate_v3.parquet": "ok",
+      "submissions/candidate_v1.json": "ok",
+      "submissions/candidate_v2.json": "ok",
+      "submissions/candidate_v3.json": "ok",
+      "outputs/_mac_tracked_md5.txt": "ok",
+      "14 Parquet del challenge (sha256 conjunto)": "ok",
+      "43 archivos de bundles finales (md5 conjunto)": "ok"
+    },
+    "all_checked_ok": true,
+    "n_checked": 9
+  }
+}

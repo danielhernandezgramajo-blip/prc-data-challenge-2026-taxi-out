@@ -1,0 +1,258 @@
+{
+  "description": "V4 — Oráculos (cotas optimistas) del Gate A y escalera suplementaria, con IC bootstrap y desglose por aeropuerto.\n\n    python src/v4_oracles.py\n\nNO entrena y NO forma parte de ninguna candidata. Usa las predicciones OOF ya guardadas de V3 (S4A_mix; folds de origen\ncreciente julio y diciembre 2025; diciembre = proxy de enero; pesos del ranking) y los timestamps visibles de los Parquet de\ntraining (MVT_ID solo para alinear filas). Cada oráculo es la mezcla de expertos de protocol.md §4 con una compuerta PERFECTA\n(conoce el target): mide la ganancia máxima alcanzable, no una ganancia realizable.\n\nEscalera (B→E es acumulativa; A2_* son variantes del Gate A):\n  A2_nonSCHED_tau{10,30,60}: filas con un ancla no-SCHED a ±τ de BLOCK que no son copia de SCHED → MVT − ancla; resto V3.\n                     τ = 10 s es el Gate A prerregistrado; 30/60 s son sensibilidad (cada vez menos \"copia\" y más \"cercanía\").\n  B_all_anchors:     filas con CUALQUIER ancla (incl. SCHED) a ±10 s → MVT − ancla; resto V3.\n  C_dayshift:        + clase de fecha desplazada (regime_class 2) perfecta → 86 400 + rama normal de V3.\n  C2_rest_normal:    + resto predicho por la rama normal pura de V3 (sin la masa p1 que la mezcla reparte por prudencia).\n  D_stage3_bulk:     + ganancia de capacidad/escala de la Etapa 3 (razón de MSE medida en el grueso de julio, exp_capacity.json)\n                     aplicada al grueso (y ≤ 1 h) del resto. APROXIMACIÓN.\n  E_perfect_tail:    + cola (y > 1 h) del resto perfecta.\nSalidas: outputs/experiments/v4/oracles.json, outputs/experiments/v4/oracle_by_airport.csv",
+  "folds": "Jul 2025 y Dec 2025 (proxy de enero), OOF origen creciente de V3",
+  "weights": {
+    "Jul": 0.5571321275602379,
+    "Dec": 0.4428678724397621
+  },
+  "n_boot": 1000,
+  "seed": 42,
+  "bootstrap": "pareado, bloques aeropuerto-día, estratificado por mes",
+  "stage3_bulk_mse_ratio": 0.9243788866239239,
+  "steps": {
+    "V3_S4A_mix": {
+      "rmse_w": 304.42181040031323,
+      "rmse_jul": 350.21856060446106,
+      "rmse_dec": 234.42909254351824,
+      "delta_w_vs_v3": 0.0,
+      "ci95_rmse_w": [
+        279.28032298002677,
+        332.18149983801624
+      ],
+      "ci95_delta_w": [
+        0.0,
+        0.0
+      ],
+      "rows_modified": {
+        "Jul": null,
+        "Dec": null
+      }
+    },
+    "A2_nonSCHED_tau10": {
+      "rmse_w": 299.1744355470966,
+      "rmse_jul": 344.73146048675517,
+      "rmse_dec": 229.3519859215911,
+      "delta_w_vs_v3": -5.247374853216627,
+      "ci95_rmse_w": [
+        273.5053570681072,
+        327.06350136720084
+      ],
+      "ci95_delta_w": [
+        -5.79390142501791,
+        -4.736176515368355
+      ],
+      "rows_modified": {
+        "Jul": {
+          "n": 18295,
+          "pct": 9.592948566694458,
+          "v3_rmse_on_rows": 199.4138795669424,
+          "v3_sse_share_pct": 3.110173121987851
+        },
+        "Dec": {
+          "n": 16628,
+          "pct": 10.036396120161518,
+          "v3_rmse_on_rows": 153.2206106489528,
+          "v3_sse_share_pct": 4.287352170839019
+        }
+      }
+    },
+    "A2_nonSCHED_tau30": {
+      "rmse_w": 298.42551974478226,
+      "rmse_jul": 344.12195138302036,
+      "rmse_dec": 228.29793598982735,
+      "delta_w_vs_v3": -5.99629065553097,
+      "ci95_rmse_w": [
+        272.65939090822724,
+        326.35117545808987
+      ],
+      "ci95_delta_w": [
+        -6.546969380450631,
+        -5.467533633830946
+      ],
+      "rows_modified": {
+        "Jul": {
+          "n": 23525,
+          "pct": 12.33528915176207,
+          "v3_rmse_on_rows": 185.55257424689916,
+          "v3_sse_share_pct": 3.462621206476767
+        },
+        "Dec": {
+          "n": 21972,
+          "pct": 13.26194945586895,
+          "v3_rmse_on_rows": 146.67816089615164,
+          "v3_sse_share_pct": 5.191767882715768
+        }
+      }
+    },
+    "A2_nonSCHED_tau60": {
+      "rmse_w": 292.4563098681431,
+      "rmse_jul": 338.2644139422652,
+      "rmse_dec": 221.77493573623534,
+      "delta_w_vs_v3": -11.965500532170154,
+      "ci95_rmse_w": [
+        266.5238243715222,
+        320.78951500437245
+      ],
+      "ci95_delta_w": [
+        -12.901473324449714,
+        -11.149695646196626
+      ],
+      "rows_modified": {
+        "Jul": {
+          "n": 49048,
+          "pct": 25.718225815754565,
+          "v3_rmse_on_rows": 183.2634403511645,
+          "v3_sse_share_pct": 7.042297343854783
+        },
+        "Dec": {
+          "n": 46205,
+          "pct": 27.888602521774295,
+          "v3_rmse_on_rows": 149.33983538026146,
+          "v3_sse_share_pct": 11.317619173438711
+        }
+      }
+    },
+    "B_all_anchors": {
+      "rmse_w": 269.24001970843557,
+      "rmse_jul": 305.9030440827858,
+      "rmse_dec": 214.39026166468597,
+      "delta_w_vs_v3": -35.181790691877666,
+      "ci95_rmse_w": [
+        247.8800469478741,
+        293.27147618599855
+      ],
+      "ci95_delta_w": [
+        -44.88026574323736,
+        -26.57352163806224
+      ],
+      "rows_modified": {
+        "Jul": {
+          "n": 26294,
+          "pct": 13.787209052345673,
+          "v3_rmse_on_rows": 459.2478022131139,
+          "v3_sse_share_pct": 23.707852494042225
+        },
+        "Dec": {
+          "n": 24754,
+          "pct": 14.941120372773527,
+          "v3_rmse_on_rows": 245.37715980074117,
+          "v3_sse_share_pct": 16.369236460361684
+        }
+      }
+    },
+    "C_dayshift": {
+      "rmse_w": 257.0306621668444,
+      "rmse_jul": 286.55971652429736,
+      "rmse_dec": 214.17645263999933,
+      "delta_w_vs_v3": -47.39114823346881,
+      "ci95_rmse_w": [
+        241.46304128650962,
+        273.4240912586947
+      ],
+      "ci95_delta_w": [
+        -66.42768982768752,
+        -31.82568173480188
+      ],
+      "rows_modified": {
+        "Jul": {
+          "n": 4,
+          "pct": 0.002097392416877717,
+          "v3_rmse_on_rows": 23377.4112979884,
+          "v3_sse_share_pct": 9.345320745103239
+        },
+        "Dec": {
+          "n": 1,
+          "pct": 0.0006035840822805821,
+          "v3_rmse_on_rows": 3897.3332225353515,
+          "v3_sse_share_pct": 0.16682066358084413
+        }
+      }
+    },
+    "C2_rest_normal": {
+      "rmse_w": 237.5527222793641,
+      "rmse_jul": 258.56938885119723,
+      "rmse_dec": 208.12072863449637,
+      "delta_w_vs_v3": -66.86908812094913,
+      "ci95_rmse_w": [
+        227.0984680652224,
+        249.80035466299267
+      ],
+      "ci95_delta_w": [
+        -89.17205494177232,
+        -46.00830407891536
+      ],
+      "rows_modified": {
+        "Jul": {
+          "n": 164415,
+          "pct": 86.21069355523746,
+          "v3_rmse_on_rows": 308.619659338944,
+          "v3_sse_share_pct": 66.94682676085452
+        },
+        "Dec": {
+          "n": 140922,
+          "pct": 85.05827604314419,
+          "v3_rmse_on_rows": 232.22162881633378,
+          "v3_sse_share_pct": 83.46394287605747
+        }
+      }
+    },
+    "D_stage3_bulk": {
+      "rmse_w": 230.15010991333185,
+      "rmse_jul": 250.94217416687857,
+      "rmse_dec": 200.96100283251127,
+      "delta_w_vs_v3": -74.27170048698139,
+      "ci95_rmse_w": [
+        219.62306907398002,
+        242.47579647693237
+      ],
+      "ci95_delta_w": [
+        -96.59749711122926,
+        -53.43325661353725
+      ],
+      "rows_modified": {
+        "Jul": {
+          "n": 164057,
+          "pct": 86.0229769339269,
+          "v3_rmse_on_rows": 279.7635658199091,
+          "v3_sse_share_pct": 54.893188766764524
+        },
+        "Dec": {
+          "n": 140762,
+          "pct": 84.9617025899793,
+          "v3_rmse_on_rows": 220.53609141546792,
+          "v3_sse_share_pct": 75.18990576224543
+        }
+      }
+    },
+    "E_perfect_tail": {
+      "rmse_w": 205.73018537239014,
+      "rmse_jul": 217.9628434998261,
+      "rmse_dec": 189.2215110203441,
+      "delta_w_vs_v3": -98.6916250279231,
+      "ci95_rmse_w": [
+        200.35316552429887,
+        211.8826300854156
+      ],
+      "ci95_delta_w": [
+        -123.68458657514482,
+        -75.90371594019022
+      ],
+      "rows_modified": {
+        "Jul": {
+          "n": 358,
+          "pct": 0.18771662131055564,
+          "v3_rmse_on_rows": 2806.382518898701,
+          "v3_sse_share_pct": 12.053637994090009
+        },
+        "Dec": {
+          "n": 160,
+          "pct": 0.09657345316489313,
+          "v3_rmse_on_rows": 2169.9081870072823,
+          "v3_sse_share_pct": 8.274037113812028
+        }
+      }
+    }
+  },
+  "airports_A2_tau10_delta_le_-15s": 1,
+  "airports_total": 10
+}

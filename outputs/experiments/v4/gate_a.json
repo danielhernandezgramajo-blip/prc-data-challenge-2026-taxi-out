@@ -1,0 +1,93 @@
+{
+  "A1_copy_mass_union_non_sched_pct": 5.770029004941696,
+  "A1_copy_mass_sum_non_sched_pct": 16.37016575645537,
+  "A1_copy_mass_sum_non_sched_corrected_pct": 16.809597897153715,
+  "A1_threshold_pct": 5.0,
+  "A1_pass": true,
+  "A2_oracle": {
+    "Jul": {
+      "n": 190713,
+      "n_oracle_rows": 18295,
+      "pct_oracle_rows": 9.592948566694458,
+      "rmse_s4a": 350.21856060446106,
+      "rmse_oracle": 344.73146048691893,
+      "mse_s4a": 122653.04019186058,
+      "mse_oracle": 118839.77984944414
+    },
+    "Dec": {
+      "n": 165677,
+      "n_oracle_rows": 16628,
+      "pct_oracle_rows": 10.036396120161518,
+      "rmse_s4a": 234.42909254351824,
+      "rmse_oracle": 229.3519859218143,
+      "mse_s4a": 54956.99943077743,
+      "mse_oracle": 52602.33344628011
+    },
+    "weighted": {
+      "rmse_s4a": 304.42181040031323,
+      "rmse_oracle": 299.17443554727754,
+      "delta": -5.247374853035694,
+      "note": "diciembre como proxy de enero; pesos del ranking"
+    }
+  },
+  "A2_threshold_delta_s": -15.0,
+  "A2_pass": false,
+  "row_summary": {
+    "pct_rows_attributed_tau30": 17.95854002331842,
+    "pct_rows_attributed_tau10": 14.852902596440273,
+    "pct_ambiguous_tau30": 0.02071895741438922,
+    "pct_attributed_to_shifted_anchor_tau30": 0.00014388164871103625,
+    "nearest_anchor_share_pct": {
+      "SCHED": 26.195764412025248,
+      "SCHED-1d": 0.00023980274785172708,
+      "SCHED+1d": 0.002350066928946925,
+      "IOBT": 6.62172123697931,
+      "IOBT-1d": 0.0,
+      "IOBT+1d": 0.0,
+      "LOBT": 0.05491482925804551,
+      "LOBT-1d": 0.0,
+      "LOBT+1d": 0.0,
+      "EOBT1": 8.023560140370936,
+      "EOBT1-1d": 0.0,
+      "EOBT1+1d": 0.0,
+      "AOBT3": 59.101449511689665,
+      "AOBT3-1d": 0.0,
+      "AOBT3+1d": 0.0,
+      "(none)": 0.0
+    },
+    "dist1_quantiles_s": [
+      4.0,
+      56.0,
+      116.0,
+      192.0,
+      355.0
+    ],
+    "pct_rows_missing_source": {
+      "SCHED_TIME_UTC_mvt": 0.0,
+      "IOBT_flt": 1.0776735488456615,
+      "LOBT_flt": 1.0776735488456615,
+      "EOBT_1_flt": 1.0776735488456615,
+      "AOBT_3_flt": 1.0776735488456615
+    }
+  },
+  "aux_stand": {
+    "pct_dep_with_next_arr_6h": 79.63810887716201,
+    "next_gap_quantiles_min": [
+      9.183333333333334,
+      29.379166666666666,
+      61.483333333333334,
+      128.96666666666667,
+      255.06666666666666
+    ],
+    "pct_next_gap_0_10min": 4.397598711204112,
+    "pct_next_gap_negative": 0.07692872151083405,
+    "prev_gap_quantiles_min": [
+      45.0,
+      62.016666666666666,
+      92.91666666666667,
+      209.96666666666667,
+      671.0333333333333
+    ]
+  },
+  "gate_A_pass": false
+}
