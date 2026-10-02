@@ -119,13 +119,15 @@ Bootstrap pareado (1 000 réplicas, bloques aeropuerto-día, estratificado por m
 | route | 6 077 | 0.714 | 0.652 | 0.675 | 0.672 |
 | presence_pattern | 2 | 0.478 | 0.503 | 0.485 | 0.493 |
 | aobt3_resolution | 30 | 0.695 | 0.641 | 0.663 | 0.666 |
-| month | 12 | 0.500 | 0.500 | 0.500 | 0.500 |
+| month | 12 | n/a | n/a | n/a | n/a |
 
 La mejor agrupación (`flight_number` para `copy_SCHED`) llega a 0.717, solo
 +0.024 sobre el aeropuerto por sí solo (0.693). Para las copias de AOBT_3 ninguna supera
 0.657. El patrón de presencia no informa (≈ 0.5; solo hay 2 patrones: con o sin datos `_flt`). Nota metodológica: una primera versión usaba la tasa
 leave-one-out por fila, que en agrupaciones de baja cardinalidad con una categoría dominante sesga el AUC muy por debajo de 0.5
-(p. ej. 0.01 para el patrón de presencia); se sustituyó por la estimación fuera de mes antes de redactar este informe.
+(p. ej. 0.01 para el patrón de presencia); se sustituyó por la estimación fuera de mes, con el prior del suavizado calculado
+también sin el mes evaluado (corrección posterior: la versión del commit c68179e usaba un prior global, una fuga mínima).
+Estos AUC son univariados y no acotan un clasificador multivariable. `month` no tiene AUC: fuera de mes no generaliza.
 
 ## 9. Resolución de los timestamps (% con segundos = 0, rango entre aeropuertos)
 

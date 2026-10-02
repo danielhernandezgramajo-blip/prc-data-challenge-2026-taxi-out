@@ -36,8 +36,8 @@ alcanzable con una compuerta perfecta, no resultados realizables. B→E son acum
 | Compuerta perfecta sobre TODAS las fuentes (incl. SCHED) | 305.9 | 214.4 | **269.2** | [247.9, 293.3] | -35.2 [-44.9, -26.6] |
 | + fecha desplazada perfecta | 286.6 | 214.2 | **257.0** | [241.5, 273.4] | -47.4 [-66.4, -31.8] |
 | + resto con la rama normal pura (sin masa p1) | 258.6 | 208.1 | **237.6** | [227.1, 249.8] | -66.9 [-89.2, -46.0] |
-| + capacidad/escala Etapa 3 en el grueso (aprox.) | 250.9 | 201.0 | **230.2** | [219.6, 242.5] | -74.3 [-96.6, -53.4] |
-| + cola > 1 h perfecta (suelo) | 218.0 | 189.2 | **205.7** | [200.4, 211.9] | -98.7 [-123.7, -75.9] |
+| + capacidad/escala Etapa 3 en el grueso (aprox.; oráculo, NO alcanzable) | 250.9 | 201.0 | **230.2** | [219.6, 242.5] | -74.3 [-96.6, -53.4] |
+| + cola > 1 h perfecta (suelo; NO alcanzable) | 218.0 | 189.2 | **205.7** | [200.4, 211.9] | -98.7 [-123.7, -75.9] |
 
 Bootstrap: 1000 réplicas pareadas, bloques aeropuerto-día, estratificado por mes, recombinado con los pesos; semilla 42.
 La razón de MSE de la Etapa 3 (0.924) viene del diagnóstico V3 (`exp_capacity.json`).
@@ -63,9 +63,11 @@ SCHED y la fecha desplazada, que V3 ya modela, no de añadir fuentes.
 
 ## 4. Columnas nuevas con señal real
 
-Ninguna con señal material para separar fuentes. AUC fuera de mes (`source_audit.md` §8): número de vuelo, callsign, ruta y
-stand ≈ 0.71 para copias de SCHED (≈ +0.02 sobre el aeropuerto solo), ≤ 0.66 para copias de AOBT_3; patrón de presencia ≈ 0.5;
-resolución de AOBT_3 no añade nada. Sin Etapas B/C no se midió la importancia de las features V4 en un modelo.
+Ninguna agrupación individual separa bien las fuentes. AUC fuera de mes (`source_audit.md` §8): la mejor llega a
+0.717 para copias de SCHED (flight_number; +0.024 sobre el aeropuerto solo), ≤ 0.657 para copias de
+AOBT_3; patrón de presencia ≈ 0.49; la resolución de AOBT_3 no añade nada. **Son AUC univariados**: no acotan lo que
+puede lograr un clasificador multivariable (el de V3 ya ronda 0.87 para la clase 1). Sin Etapas B/C no se midió la importancia
+de las features V4 en un modelo; eso queda para V4b.
 
 ## 5. ARVT_1 / ARVT_3
 
@@ -88,9 +90,10 @@ No hay resultados "con y sin ARVT" que reportar.
 Con compuerta perfecta: saber qué filas copian una fuente (casi todo SCHED) vale -35.2 s; la fecha desplazada,
 -12.2 s más; quitar la masa p1 que la mezcla reparte por prudencia en las filas normales, -19.5 s más; la
 capacidad/escala de la Etapa 3, ≈ -7.4 s; la cola > 1 h, -24.4 s. Todo ese margen depende de **identificar**
-qué filas son artefacto, no de qué fuente se copió, y las señales visibles para identificarlo son débiles (AUC ≤ 0.72 por
-agrupación; el clasificador de V3 ya combina las útiles). Con compuerta perfecta sobre las fuentes el techo es 269.2 s;
-una compuerta real queda por encima. La banda 220–240 s solo se alcanza con identificación perfecta de todos los artefactos.
+qué filas son artefacto, no de qué fuente se copió. Las agrupaciones individuales identifican poco (AUC ≤ 0.72), pero eso no
+acota un clasificador multivariable (V3 ≈ 0.87 para la clase 1); V4b lo prueba. Con compuerta perfecta sobre las fuentes el
+techo es 269.2 s; una compuerta real queda por encima. Los pasos D y E de la escalera son oráculos/aproximaciones **no
+alcanzables**; la banda 220–240 s solo aparece con identificación perfecta de todos los artefactos.
 
 ## 8. Integridad y cumplimiento
 

@@ -100,14 +100,17 @@ def confusion(ts: np.ndarray, block: np.ndarray, tol: float) -> pl.DataFrame:
     return pl.from_dicts(rows)
 
 
-def out_of_month_rate(inv: np.ndarray, month: np.ndarray, y: np.ndarray, prior: float, k: float = 20.0) -> np.ndarray:
-    """Tasa del grupo de cada fila estimada SOLO con filas de otros meses ("fuera de mes"), suavizada hacia `prior` (una
-    constante común a todas las filas) con pseudo-recuento k. Ninguna fila ve el target de su propio mes."""
-    inv = np.asarray(inv, dtype=np.int64); mi = np.asarray(month, dtype=np.int64)
+def out_of_month_rate(inv: np.ndarray, month: np.ndarray, y: np.ndarray, k: float = 20.0) -> np.ndarray:
+    """Tasa del grupo de cada fila estimada SOLO con filas de otros meses ("fuera de mes"), suavizada con pseudo-recuento k
+    hacia el prior de los OTROS meses (tasa global sin el mes evaluado). Ni el numerador, ni el denominador, ni el prior
+    de una fila dependen del target de su propio mes."""
+    inv = np.asarray(inv, dtype=np.int64); mi = np.asarray(month, dtype=np.int64); y = np.asarray(y, dtype=np.float64)
     G = int(inv.max()) + 1; mi = mi - mi.min(); M = int(mi.max()) + 1
     key = inv * M + mi
     s_gm = np.bincount(key, weights=y, minlength=G * M); n_gm = np.bincount(key, minlength=G * M).astype(np.float64)
     s_g = np.bincount(inv, weights=y, minlength=G); n_g = np.bincount(inv, minlength=G).astype(np.float64)
+    y_m = np.bincount(mi, weights=y, minlength=M); n_m = np.bincount(mi, minlength=M).astype(np.float64)
+    prior = ((y_m.sum() - y_m) / np.maximum(n_m.sum() - n_m, 1.0))[mi]
     return (s_g[inv] - s_gm[key] + k * prior) / (n_g[inv] - n_gm[key] + k)
 
 
@@ -116,7 +119,7 @@ def group_informativeness(dep: pl.DataFrame, targets: dict[str, np.ndarray]) -> 
     FUERA DE MES (sin ver el mes de la fila) para predecir la clase de la fila. Mide si la agrupación informa sobre la
     fuente de forma generalizable a un mes no visto. (Sustituye al AUC leave-one-out por fila, que en agrupaciones de baja
     cardinalidad con una categoría dominante queda sesgado a la baja —p. ej. 0.01— porque dentro de cada grupo los
-    positivos reciben sistemáticamente una tasa menor que los negativos.) "month" da 0.5 por construcción."""
+    positivos reciben sistemáticamente una tasa menor que los negativos.) "month" no tiene AUC: fuera de mes no generaliza."""
     groups = {
         "airport": pl.col("ADEP_mvt"),
         "month": pl.col("month").cast(pl.String),
@@ -140,12 +143,12 @@ def group_informativeness(dep: pl.DataFrame, targets: dict[str, np.ndarray]) -> 
         for tname, y in targets.items():
             y = y.astype(float); prior = float(y.mean())
             s = np.bincount(inv, weights=y)
-            enc = out_of_month_rate(inv, month, y, prior)
-            auc = roc_auc_score(y, enc) if 0 < y.sum() < len(y) else np.nan
+            enc = out_of_month_rate(inv, month, y)
+            auc = roc_auc_score(y, enc) if (0 < y.sum() < len(y) and gname != "month") else np.nan
             rate = s / cnt; big = cnt >= 200
             info_rows.append({"grouping": gname, "target": tname, "n_groups": int(len(uniq)), "n_groups_ge200": int(big.sum()),
                               "prior_pct": 100 * prior, "auc_out_of_month": auc,
-                              "note": "0.5 por construccion (fuera de mes)" if gname == "month" else "",
+                              "note": "no generalizable fuera de mes por construccion (sin AUC)" if gname == "month" else "",
                               "p10_rate_pct_ge200": 100 * float(np.quantile(rate[big], 0.1)) if big.any() else np.nan,
                               "p90_rate_pct_ge200": 100 * float(np.quantile(rate[big], 0.9)) if big.any() else np.nan,
                               "max_rate_pct_ge200": 100 * float(rate[big].max()) if big.any() else np.nan})

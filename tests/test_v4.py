@@ -142,16 +142,19 @@ def test_out_of_month_encoding_no_leakage():
     rng = np.random.default_rng(0)
     n = 5000
     inv = rng.integers(0, 30, n); month = rng.integers(1, 13, n); y = (rng.random(n) < 0.1).astype(float)
-    enc = out_of_month_rate(inv, month, y, prior=0.1)
+    enc = out_of_month_rate(inv, month, y)
     y2 = y.copy(); jul = month == 7; y2[jul] = 1.0 - y2[jul]           # se altera solo el target de julio
-    enc2 = out_of_month_rate(inv, month, y2, prior=0.1)
-    assert np.array_equal(enc[jul], enc2[jul])                         # julio no ve su propio target
+    enc2 = out_of_month_rate(inv, month, y2)
+    assert np.array_equal(enc[jul], enc2[jul])                         # julio no ve su propio target (tampoco vía el prior)
     assert not np.array_equal(enc[~jul], enc2[~jul])                   # los demás meses sí ven julio (control)
-    # agrupación = mes → solo el prior (no generaliza fuera de mes)
-    assert np.allclose(out_of_month_rate(month - 1, month, y, prior=0.1), 0.1)
+    # agrupación = mes → solo el prior de los otros meses
+    m_enc = out_of_month_rate(month - 1, month, y)
+    for m in range(1, 13):
+        r = month == m
+        assert np.allclose(m_enc[r], y[~r].mean())
     # comprobación directa en una fila
-    i = 0; m = (inv == inv[i]) & (month != month[i])
-    assert np.isclose(enc[i], (y[m].sum() + 20 * 0.1) / (m.sum() + 20))
+    i = 0; m = (inv == inv[i]) & (month != month[i]); pr = y[month != month[i]].mean()
+    assert np.isclose(enc[i], (y[m].sum() + 20 * pr) / (m.sum() + 20))
 
 
 # ---------------------------------------------------------------------------

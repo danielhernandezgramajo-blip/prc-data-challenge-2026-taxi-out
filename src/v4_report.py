@@ -91,6 +91,10 @@ def f2(x: float) -> str:
     return f"{x:.2f}"
 
 
+def _auc(v) -> str:
+    return "n/a" if v is None or v != v else f"{v:.3f}"
+
+
 def table(headers: list[str], rows: list[list[str]]) -> str:
     out = ["| " + " | ".join(headers) + " |", "|" + "|".join(["---"] * len(headers)) + "|"]
     out += ["| " + " | ".join(r) + " |" for r in rows]
@@ -138,7 +142,7 @@ def source_audit_md(d: dict) -> str:
     for grp in ["airport", "operator", "flight_number", "callsign", "airport_stand", "airport_runway", "route", "presence_pattern", "aobt3_resolution", "month"]:
         sub = gi.filter(pl.col("grouping") == grp)
         gi_rows.append([grp, f"{sub['n_groups'][0]:,}".replace(",", " ")] +
-                       [f"{sub.filter(pl.col('target') == t)['auc_out_of_month'][0]:.3f}" for t in ("copy_SCHED", "copy_AOBT3", "copy_IOBT_LOBT_EOBT_only", "copy_any")])
+                       [_auc(sub.filter(pl.col('target') == t)['auc_out_of_month'][0]) for t in ("copy_SCHED", "copy_AOBT3", "copy_IOBT_LOBT_EOBT_only", "copy_any")])
     res = d["res"]
     sec0 = lambda c: (res[f"{c}__pct_sec0"].min(), res[f"{c}__pct_sec0"].max())
     eham_aobt = res.filter(pl.col("ADEP_mvt") == "EHAM")["AOBT_3_flt__pct_sec0"][0]
@@ -147,7 +151,7 @@ def source_audit_md(d: dict) -> str:
     a2t = o["A2_nonSCHED_tau10"]
     lebl = d["oapt"].filter(pl.col("airport") == "LEBL")["delta__A2_nonSCHED_tau10"][0]
     n_apt15 = d["orc"]["airports_A2_tau10_delta_le_-15s"]
-    best_auc = gi.filter(pl.col("grouping") != "month").sort("auc_out_of_month", descending=True).row(0, named=True)
+    best_auc = gi.filter((pl.col("grouping") != "month") & pl.col("auc_out_of_month").is_not_nan()).sort("auc_out_of_month", descending=True).row(0, named=True)
     apt_auc = gi.filter((pl.col("grouping") == "airport") & (pl.col("target") == best_auc["target"]))["auc_out_of_month"][0]
     max_aobt_auc = gi.filter((pl.col("target") == "copy_AOBT3") & (pl.col("grouping") != "month"))["auc_out_of_month"].max()
 
@@ -242,7 +246,9 @@ La mejor agrupación (`{best_auc['grouping']}` para `{best_auc['target']}`) lleg
 {best_auc['auc_out_of_month'] - apt_auc:+.3f} sobre el aeropuerto por sí solo ({apt_auc:.3f}). Para las copias de AOBT_3 ninguna supera
 {max_aobt_auc:.3f}. El patrón de presencia no informa (≈ 0.5; solo hay 2 patrones: con o sin datos `_flt`). Nota metodológica: una primera versión usaba la tasa
 leave-one-out por fila, que en agrupaciones de baja cardinalidad con una categoría dominante sesga el AUC muy por debajo de 0.5
-(p. ej. 0.01 para el patrón de presencia); se sustituyó por la estimación fuera de mes antes de redactar este informe.
+(p. ej. 0.01 para el patrón de presencia); se sustituyó por la estimación fuera de mes, con el prior del suavizado calculado
+también sin el mes evaluado (corrección posterior: la versión del commit c68179e usaba un prior global, una fuga mínima).
+Estos AUC son univariados y no acotan un clasificador multivariable. `month` no tiene AUC: fuera de mes no generaliza.
 
 ## 9. Resolución de los timestamps (% con segundos = 0, rango entre aeropuertos)
 
@@ -273,7 +279,7 @@ def report_md(d: dict, ver: dict) -> str:
            "A2_nonSCHED_tau30": "↳ sensibilidad ±30 s", "A2_nonSCHED_tau60": "↳ sensibilidad ±60 s (ya no son copias)",
            "B_all_anchors": "Compuerta perfecta sobre TODAS las fuentes (incl. SCHED)",
            "C_dayshift": "+ fecha desplazada perfecta", "C2_rest_normal": "+ resto con la rama normal pura (sin masa p1)",
-           "D_stage3_bulk": "+ capacidad/escala Etapa 3 en el grueso (aprox.)", "E_perfect_tail": "+ cola > 1 h perfecta (suelo)"}
+           "D_stage3_bulk": "+ capacidad/escala Etapa 3 en el grueso (aprox.; oráculo, NO alcanzable)", "E_perfect_tail": "+ cola > 1 h perfecta (suelo; NO alcanzable)"}
     rows = []
     for s, lb in lab.items():
         r = o[s]
@@ -290,6 +296,12 @@ def report_md(d: dict, ver: dict) -> str:
            "C2": st("C2_rest_normal") - st("C_dayshift"), "D": st("D_stage3_bulk") - st("C2_rest_normal"),
            "E": st("E_perfect_tail") - st("D_stage3_bulk")}
     top_apt = d["oapt"].sort("delta__B_all_anchors").row(0, named=True)
+    gi = d["gi"]
+    gcs = gi.filter((pl.col("target") == "copy_SCHED") & ~pl.col("grouping").is_in(["month", "airport"]) & pl.col("auc_out_of_month").is_not_nan()).sort("auc_out_of_month", descending=True)
+    gsum = {"best": gcs["auc_out_of_month"][0], "best_name": gcs["grouping"][0],
+            "apt": gi.filter((pl.col("grouping") == "airport") & (pl.col("target") == "copy_SCHED"))["auc_out_of_month"][0],
+            "aobt": gi.filter((pl.col("target") == "copy_AOBT3") & (pl.col("grouping") != "month"))["auc_out_of_month"].max(),
+            "pres": gi.filter((pl.col("grouping") == "presence_pattern") & (pl.col("target") == "copy_any"))["auc_out_of_month"][0]}
     return f"""# V4 — Informe final: parada en la Etapa A
 
 Generado por `src/v4_report.py`. Protocolo: `protocol.md` (guardado antes de auditar y de entrenar). Auditoría: `source_audit.md`.
@@ -334,9 +346,11 @@ SCHED y la fecha desplazada, que V3 ya modela, no de añadir fuentes.
 
 ## 4. Columnas nuevas con señal real
 
-Ninguna con señal material para separar fuentes. AUC fuera de mes (`source_audit.md` §8): número de vuelo, callsign, ruta y
-stand ≈ 0.71 para copias de SCHED (≈ +0.02 sobre el aeropuerto solo), ≤ 0.66 para copias de AOBT_3; patrón de presencia ≈ 0.5;
-resolución de AOBT_3 no añade nada. Sin Etapas B/C no se midió la importancia de las features V4 en un modelo.
+Ninguna agrupación individual separa bien las fuentes. AUC fuera de mes (`source_audit.md` §8): la mejor llega a
+{gsum['best']:.3f} para copias de SCHED ({gsum['best_name']}; {gsum['best'] - gsum['apt']:+.3f} sobre el aeropuerto solo), ≤ {gsum['aobt']:.3f} para copias de
+AOBT_3; patrón de presencia ≈ {gsum['pres']:.2f}; la resolución de AOBT_3 no añade nada. **Son AUC univariados**: no acotan lo que
+puede lograr un clasificador multivariable (el de V3 ya ronda 0.87 para la clase 1). Sin Etapas B/C no se midió la importancia
+de las features V4 en un modelo; eso queda para V4b.
 
 ## 5. ARVT_1 / ARVT_3
 
@@ -359,9 +373,10 @@ No hay resultados "con y sin ARVT" que reportar.
 Con compuerta perfecta: saber qué filas copian una fuente (casi todo SCHED) vale {inc['B']:+.1f} s; la fecha desplazada,
 {inc['C']:+.1f} s más; quitar la masa p1 que la mezcla reparte por prudencia en las filas normales, {inc['C2']:+.1f} s más; la
 capacidad/escala de la Etapa 3, ≈ {inc['D']:+.1f} s; la cola > 1 h, {inc['E']:+.1f} s. Todo ese margen depende de **identificar**
-qué filas son artefacto, no de qué fuente se copió, y las señales visibles para identificarlo son débiles (AUC ≤ 0.72 por
-agrupación; el clasificador de V3 ya combina las útiles). Con compuerta perfecta sobre las fuentes el techo es {f1(o['B_all_anchors']['rmse_w'])} s;
-una compuerta real queda por encima. La banda 220–240 s solo se alcanza con identificación perfecta de todos los artefactos.
+qué filas son artefacto, no de qué fuente se copió. Las agrupaciones individuales identifican poco (AUC ≤ 0.72), pero eso no
+acota un clasificador multivariable (V3 ≈ 0.87 para la clase 1); V4b lo prueba. Con compuerta perfecta sobre las fuentes el
+techo es {f1(o['B_all_anchors']['rmse_w'])} s; una compuerta real queda por encima. Los pasos D y E de la escalera son oráculos/aproximaciones **no
+alcanzables**; la banda 220–240 s solo aparece con identificación perfecta de todos los artefactos.
 
 ## 8. Integridad y cumplimiento
 
