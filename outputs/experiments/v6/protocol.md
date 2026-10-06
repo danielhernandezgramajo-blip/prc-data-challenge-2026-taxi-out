@@ -73,3 +73,10 @@ Lectura honesta del riesgo:
 - Resto de filas de la regla: ≈ −2 s esperado (−0.1/−0.2 s por mes en 2025 sin las filas extremas); EHAM 2026 puede
   pasarse si se parece al día de nieve de 2025 (≈ +1 s en ese escenario).
 - Mezcla LightGBM: −1.41 s (validada en §2 de V5).
+
+## 4. Resultado oficial (2026-10-06)
+
+`optimistic-dragon_v3.parquet` (= candidate_v6, sha 3fe341e4…) → **286.5783 s** (Succeeded, 344 841 pares).
+- Frente al mejor anterior (V3, 317.9925): −31.41 s. Frente a V4b (321.7979): −35.22 s.
+- Lo previsto antes de subir (§3): −35 a −45 s frente a V4b si la fila de 24 h se comportaba como en 2025; ≈ +30 s si no.
+  El resultado cae en el escenario previsto. Se registra una sola vez y no se usa para ajustar ni elegir nada.
