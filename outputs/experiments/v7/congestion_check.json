@@ -1,0 +1,175 @@
+{
+ "config": {
+  "window_min": 60,
+  "threshold_primary": 900.0,
+  "a_max": 7200.0
+ },
+ "variants": [
+  {
+   "threshold": 900.0,
+   "RMSE_w": {
+    "base": 322.4330575292124,
+    "cand": 322.53933914450397
+   },
+   "delta_RMSE_w": 0.10628161529155022,
+   "bootstrap_delta_ci95": [
+    -0.28523478623596643,
+    0.5500261702758066
+   ],
+   "checks": {
+    "LOJO: inner→outer": {
+     "fit": {
+      "c": 621.4144422067873,
+      "w": -0.29505644191064473,
+      "n": 1256
+     },
+     "rows_changed": 781,
+     "rmse_base": 350.03448944456227,
+     "rmse_cand": 350.2478876688213,
+     "delta": 0.21339822425903776,
+     "rmse_affected_base": 637.4905506334568,
+     "rmse_affected_cand": 660.1551298234288
+    },
+    "LOJuO: inner→outer": {
+     "fit": {
+      "c": 500.3790960795491,
+      "w": -0.2321433245805731,
+      "n": 1256
+     },
+     "rows_changed": 2,
+     "rmse_base": 298.6783657752851,
+     "rmse_cand": 298.68547783616015,
+     "delta": 0.00711206087504479,
+     "rmse_affected_base": 334.25694015307664,
+     "rmse_affected_cand": 718.9218663727723
+    },
+    "LOJO: enero→febrero": {
+     "fit": {
+      "c": 295.48820278871733,
+      "w": 0.061641253380336165,
+      "n": 769
+     },
+     "rows_changed": 1300,
+     "rmse_base": 282.7259196405171,
+     "rmse_cand": 279.4243231617076,
+     "delta": -3.301596478809472,
+     "rmse_affected_base": 981.446048489527,
+     "rmse_affected_cand": 870.6503432943832
+    }
+   },
+   "checks_counted": 2,
+   "pass": false
+  },
+  {
+   "threshold": 600.0,
+   "RMSE_w": {
+    "base": 322.4330575292124,
+    "cand": 322.52319440006744
+   },
+   "delta_RMSE_w": 0.09013687085501942,
+   "bootstrap_delta_ci95": [
+    -0.5319725257074197,
+    0.6286526254200836
+   ],
+   "checks": {
+    "LOJO: inner→outer": {
+     "fit": {
+      "c": 351.2043071025933,
+      "w": -0.1952492142003644,
+      "n": 3273
+     },
+     "rows_changed": 2383,
+     "rmse_base": 350.03448944456227,
+     "rmse_cand": 350.34037333241037,
+     "delta": 0.30588388784809695,
+     "rmse_affected_base": 516.025819850628,
+     "rmse_affected_cand": 529.245618687406
+    },
+    "LOJuO: inner→outer": {
+     "fit": {
+      "c": 273.4259067016641,
+      "w": -0.15931578488682505,
+      "n": 3273
+     },
+     "rows_changed": 547,
+     "rmse_base": 298.6783657752851,
+     "rmse_cand": 298.5679426774014,
+     "delta": -0.11042309788371085,
+     "rmse_affected_base": 487.4380344584373,
+     "rmse_affected_cand": 463.2518420644487
+    },
+    "LOJO: enero→febrero": {
+     "fit": {
+      "c": 163.0052488407986,
+      "w": 0.08109827799238264,
+      "n": 2350
+     },
+     "rows_changed": 3305,
+     "rmse_base": 282.7259196405171,
+     "rmse_cand": 280.1315071263302,
+     "delta": -2.5944125141868994,
+     "rmse_affected_base": 769.7695652462334,
+     "rmse_affected_cand": 727.3503279946851
+    }
+   },
+   "checks_counted": 3,
+   "pass": false
+  },
+  {
+   "threshold": 1200.0,
+   "RMSE_w": {
+    "base": 322.4330575292124,
+    "cand": 322.5621336358207
+   },
+   "delta_RMSE_w": 0.12907610660829505,
+   "bootstrap_delta_ci95": [
+    0.006142227514142463,
+    0.3033372799421585
+   ],
+   "checks": {
+    "LOJO: inner→outer": {
+     "fit": {
+      "c": 868.1276255403901,
+      "w": -0.4696626330392467,
+      "n": 595
+     },
+     "rows_changed": 131,
+     "rmse_base": 350.03448944456227,
+     "rmse_cand": 350.3029131312061,
+     "delta": 0.2684236866438141,
+     "rmse_affected_base": 651.3819230045343,
+     "rmse_affected_cand": 803.0373835210421
+    },
+    "LOJuO: inner→outer": {
+     "fit": {
+      "c": 711.6838087804528,
+      "w": -0.3794278097575236,
+      "n": 595
+     },
+     "rows_changed": 0,
+     "rmse_base": 298.6783657752851,
+     "rmse_cand": 298.6783657752851,
+     "delta": 0.0,
+     "rmse_affected_base": null,
+     "rmse_affected_cand": null
+    },
+    "LOJO: enero→febrero": {
+     "fit": {
+      "c": 40.32343872713673,
+      "w": 0.5335116210768134,
+      "n": 131
+     },
+     "rows_changed": 622,
+     "rmse_base": 282.7259196405171,
+     "rmse_cand": 283.9753525407081,
+     "delta": 1.2494329001910387,
+     "rmse_affected_base": 1072.889645436116,
+     "rmse_affected_cand": 1146.6079815480764
+    }
+   },
+   "checks_counted": 2,
+   "pass": false
+  }
+ ],
+ "pass_primary": false
+}
