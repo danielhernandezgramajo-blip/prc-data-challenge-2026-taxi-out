@@ -59,26 +59,31 @@ def anomaly(df: pl.DataFrame, nb: np.ndarray, base: dict[str, float]) -> np.ndar
     return nb - med
 
 
-def target_mask(nba: np.ndarray, A: np.ndarray, L: np.ndarray, in_cell: np.ndarray, threshold: float = NBA_THRESHOLD) -> np.ndarray:
+def target_mask(nba: np.ndarray, A: np.ndarray, L: np.ndarray, in_cell: np.ndarray, threshold: float = NBA_THRESHOLD,
+                need_a: bool = True) -> np.ndarray:
     A = np.asarray(A, dtype=np.float64); L = np.asarray(L, dtype=np.float64)
-    a_ok = np.isfinite(A) & (A > 0) & (A < A_MAX)
+    a_ok = (np.isfinite(A) & (A > 0) & (A < A_MAX)) if need_a else np.ones(A.size, bool)
     no_rule = ~(np.isfinite(L) & (L > LOBT_GAP_SEC))
     return np.isfinite(nba) & (nba > threshold) & a_ok & no_rule & ~np.asarray(in_cell, bool)
 
 
-def fit_correction(b: np.ndarray, y: np.ndarray, A: np.ndarray, mask: np.ndarray, normal: np.ndarray) -> dict:
-    """(y − b) = c + w·(A − b) por mínimos cuadrados en las filas `mask & normal` (clase 0, y ≤ 3 h)."""
+def fit_correction(b: np.ndarray, y: np.ndarray, X: np.ndarray, mask: np.ndarray, normal: np.ndarray, bias_only: bool = False) -> dict:
+    """(y − b) = c + w·(X − b) por mínimos cuadrados en las filas `mask & normal` (clase 0, y ≤ 3 h). X es el ancla:
+    A propio (V7) o nb de los vecinos (V7b). Con bias_only, w = 0."""
     m = mask & normal
     if m.sum() < 30:
         raise ValueError(f"muy pocas filas para ajustar la corrección ({int(m.sum())})")
-    X = np.column_stack([np.ones(m.sum()), A[m] - b[m]])
-    (c, w), *_ = np.linalg.lstsq(X, y[m] - b[m], rcond=None)
+    if bias_only:
+        return {"c": float(np.mean(y[m] - b[m])), "w": 0.0, "n": int(m.sum())}
+    Z = np.column_stack([np.ones(m.sum()), X[m] - b[m]])
+    (c, w), *_ = np.linalg.lstsq(Z, y[m] - b[m], rcond=None)
     return {"c": float(c), "w": float(w), "n": int(m.sum())}
 
 
-def apply_correction(b: np.ndarray, A: np.ndarray, mask: np.ndarray, corr: dict) -> np.ndarray:
+def apply_correction(b: np.ndarray, X: np.ndarray, mask: np.ndarray, corr: dict) -> np.ndarray:
     out = np.asarray(b, dtype=np.float64).copy()
-    out[mask] = np.maximum(out[mask] + corr["c"] + corr["w"] * (A[mask] - out[mask]), 0.0)
+    xx = np.nan_to_num(np.asarray(X, dtype=np.float64)[mask], nan=0.0)
+    out[mask] = np.maximum(out[mask] + corr["c"] + corr["w"] * (xx - out[mask]), 0.0)
     return out
 
 

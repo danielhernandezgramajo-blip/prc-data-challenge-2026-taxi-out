@@ -49,3 +49,41 @@ propio no es fiable en congestión (muchos casos de AOBT viejo). No cumple la re
 Queda constancia de que el ranking 2026 tiene episodios de congestión fuera del rango de 2025 (EHAM 3–9 ene, LFPG 5–7 ene,
 LTFM 19 ene) donde el modelo probablemente se queda corto, pero 2025 no permite calibrar una corrección.
 (`outputs/experiments/v7/congestion_check.json`)
+
+## V7b — corrección anclada en la congestión de los vecinos (prerregistrada 2026-10-07, antes de calcularla)
+
+Motivo (visto en 2025 antes de este registro): en los meses OOF, con anomalía de vecinos alta, la media de y queda ≈ 300 s
+por ENCIMA de la media de MVT − AOBT_3 de los vecinos (nb) y el modelo muy por debajo (banda 900–1200: y 2432, nb 2108,
+predicción 1965; banda 1200–1800: y 2861, nb 2561, predicción 1990). nb promedia muchos vuelos, así que un AOBT_3 viejo
+de un vuelo concreto pesa poco (a diferencia del A propio de V7, que falló por eso).
+
+- Principal: filas con nba > 600 s, fuera de la celda y sin regla LOBT (no exige A propio): b' = b + c + w·(nb − b),
+  (c, w) por mínimos cuadrados en clase 0 (y ≤ 3 h) de los meses de ajuste.
+- Se informan también (no se eligen): umbral 300 y 900; variante "solo sesgo" (b' = b + c).
+- Mismas comprobaciones y misma regla de adopción que la enmienda de V7 (feb+ago → ene; ene → feb; jul si ≥ 30 filas;
+  mejora total y en filas afectadas en todas las que cuentan; IC 95 % de ΔRMSE_w con extremo superior < 0).
+
+### Resultado V7b (2026-10-07) → DESCARTADA
+nba > 600: ΔRMSE_w +0.09 s (IC [−0.75, +0.92]); feb+ago→ene +0.14 s, →jul +0.05 s, ene→feb −5.79 s. Mismo patrón con 300/900
+y con "solo sesgo": la corrección aprendida en febrero (episodio LTFM) se pasa en enero. El peso sobre nb − b sale ≈ 0.
+(`outputs/experiments/v7/neighbour_check.json`)
+
+## V7c — solo filas SIN AOBT_3 propio (prerregistrada 2026-10-07, antes de calcularla)
+
+Motivo (visto en 2025 tras V7b; tercera variante, se dice explícitamente): el modelo usa el AOBT_3 propio como señal
+principal; las filas que no lo tienen (en el ranking, todas sin plan NM) solo ven features estáticas y conteos de
+congestión. En los meses OOF de 2025, con congestión (nba > 600), esas filas quedan muy por debajo en todos los meses con
+filas: enero 600–900 y 1933 vs predicción 1151 (nb 1705); enero > 900 y 2409 vs 1189 (nb 2102); febrero > 900 y 4844 vs
+1645 (nb 2457). En el ranking hay 489 filas así con nba > 900 (315 en EHAM 3–5 ene 2026): V6 media 1499 frente a nb 2591.
+
+- Principal (sin parámetros, nada que ajustar): en filas con has_aobt3 = 0, fuera de la celda, sin regla LOBT y nba > 600:
+  b' = max(b, nb). Sensibilidad: umbral 300 y 900; versión ajustada b' = b + c + w·(nb − b).
+- Como no se ajusta nada, enero, febrero y julio son prueba directa. Adopción: mejora del RMSE total y del de las filas
+  afectadas en cada mes con ≥ 30 filas afectadas, y IC 95 % bootstrap de ΔRMSE_w (ene/jul) con extremo superior < 0.
+
+### Resultado V7c (2026-10-07) → CUMPLE la regla (principal, sin parámetros)
+max(b, nb), nba > 600: ΔRMSE_w −0.35 s (IC 95 % [−0.86, −0.01]); enero 112 filas −0.74 s (RMSE afectadas 1372→1084),
+febrero 173 filas −8.84 s (3290→2595); julio 17 y agosto 3 filas (neutras, < 30). Sensibilidad: umbral 300 no pasa
+(jul/ago +0.15/+0.10), 900 casi (IC hasta +0.02); la versión ajustada (c, w) empeora (sobreajusta febrero) → se queda la
+principal. Es la tercera variante probada sobre los mismos meses: la elección no es ciega, pero la principal no tiene
+parámetros que ajustar y la dirección es la misma en todos los meses con congestión. (`outputs/experiments/v7/noaobt_check.json`)
