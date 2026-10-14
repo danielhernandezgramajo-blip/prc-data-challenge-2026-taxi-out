@@ -1,260 +1,181 @@
-# PRC Data Challenge 2026 — Predicción del taxi-out time
+# PRC Data Challenge 2026 — taxi-out time prediction (team *optimistic-dragon*)
 
-Pipeline reproducible para predecir `TAXITIME_SEC_mvt` (segundos de rodaje desde el
-*off-block* hasta el despegue) **solo para movimientos de salida** (`PHASE_mvt == "DEP"`)
-y generar una submission compatible con `submitting.parquet`.
+Reproducible pipeline that predicts `TAXITIME_SEC_mvt` (seconds from off-block to take-off) for departure
+movements (`PHASE_mvt == "DEP"`) at the 10 airports of the challenge, trained only on the 2025 training files.
+Official metric: RMSE. Licence: GPL-3.0 (`LICENSE`). Language: code comments and experiment protocols are in
+Spanish; this README and `docs/METHOD.md` are in English for the review.
 
-Estado: **V1** (fases 1–5, bundles, pruebas, `submissions/candidate_v1.parquet`, congelada) y
-**V2 = S_mix** (`submissions/candidate_v2.parquet`, recomendada), evaluada con un protocolo de
-origen creciente de 8 folds y holdout de diciembre. **No se ha subido nada al bucket del
-concurso.** Métrica oficial: **RMSE**. Licencia: GPL-3.0 (`LICENSE`).
+## Final submission (phase 2, four months)
 
-## Estructura
-
-```
-Aeropuertos Taxi time/
-├── *.parquet                 # 14 Parquet originales (INTACTOS; ver "Datos")
-├── data/raw/                 # ubicación alternativa para los Parquet (vacía por ahora)
-├── notebooks/01_eda.ipynb    # EDA ejecutable de principio a fin
-├── src/
-│   ├── config.py             # rutas relativas, columnas, folds, hiperparámetros, SEED=42
-│   ├── io_utils.py           # lectura (solo lectura) de los Parquet con Polars
-│   ├── validate_data.py      # FASE 1
-│   ├── eda.py / run_eda.py   # FASE 2
-│   ├── prepare_training.py   # FASE 3: build_features() + feature_audit.csv
-│   ├── modeling_utils.py     # métricas, estrategias de outliers, codec de categóricas
-│   ├── train_baseline.py     # FASE 4: medianas, baseline operacional, CatBoost directo/residual
-│   ├── backtest.py           # FASE 5: 3 backtests temporales × 4 estrategias de outliers (--resume/--repair/--audit)
-│   ├── select_model.py       # ensamble 50/50 vs directo con las predicciones de los folds → models/final/selection.json
-│   ├── make_submission.py    # bundles finales → submissions/candidate_v1.parquet (validado antes y después de escribir)
-│   ├── make_report.py        # outputs/reports/modeling_report.md a partir de las tablas
-│   ├── v2_*.py               # V2: análisis de cola, protocolo 8 folds, features de congestión, mezcla por régimen
-│   └── v3_*.py               # V3 (etapa 2): clasificador con celdas de fecha desplazada, A_surface, candidate_v3
-├── tests/                    # pytest (20 pruebas): V1 (10), V2 (6), V3 (4)
-├── models/                   # excluido de git
-│   ├── backtest/             # modelos de EVALUACIÓN (uno por fold × estrategia) — NO son finales
-│   ├── backtest_predictions/ # predicciones de validación (.npy) para figuras, ensamble y auditoría
-│   └── final/<modelo>/       # bundles finales: model.cbm + codec.json + manifest.json (+ fallback_*.parquet)
-├── outputs/{figures,tables,reports}/
-├── submissions/              # candidate_v1/v2/v3.parquet + .json; copias para subir optimistic-dragon_v1 (= candidate_v3) y _v2 (= candidate_v2); upload_manifest.json (excluido de git; NO subido)
-├── requirements.txt / requirements-lock.txt
-├── LICENSE                   # GPL-3.0
-├── .gitignore
-└── README.md
-```
-
-## Datos
-
-Los 14 Parquet (12 × `training_2025-*.parquet`, `ranking.parquet`, `submitting.parquet`)
-**se dejan donde están** (raíz de la carpeta) y solo se leen. `src/config.py` los busca en
-este orden: `$PRC_DATA_DIR` → `data/raw/` → raíz del proyecto. Ningún Parquet, modelo,
-credencial ni submission se sube a git (`.gitignore`).
-
-Nota técnica: los archivos fueron exportados desde R; `AIRCRAFT_OPERATOR_flt` lleva el tipo
-de extensión `arrow.r.vctrs`. Se carga como `string` fijando
-`POLARS_UNKNOWN_EXTENSION_TYPE_BEHAVIOR=load_as_storage` (lo hacen los scripts).
-
-## Instalación
-
-```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-python -m ipykernel install --user --name python3
-```
-
-## Reproducir (todo con rutas relativas; se puede lanzar desde cualquier directorio)
-
-```bash
-# FASE 1 — validación (≈5 s) → outputs/reports/data_validation.md
-python src/validate_data.py
-
-# FASE 2 — EDA (≈10 s, ~2 GB RAM) → outputs/tables/*.csv, outputs/figures/*.png
-python src/run_eda.py
-jupyter nbconvert --to html --execute notebooks/01_eda.ipynb --output-dir outputs/reports --output eda_report.html
-
-# FASE 3 — features + auditoría (≈5 s) → outputs/tables/feature_audit.csv
-python src/prepare_training.py
-
-# FASE 5 — backtesting temporal (baselines + CatBoost directo y residual, 4 estrategias de outliers)
-#   ≈ 40 min con 4 CPU / 3 GB RAM. Escribe resultados de forma incremental; se puede cortar y reanudar:
-python src/backtest.py --cb-strategies original drop_nonpositive drop_gt3h winsor_p01_p999 --save-models
-python src/backtest.py --cb-strategies original drop_nonpositive drop_gt3h winsor_p01_p999 --save-models --resume   # reanudar
-python src/backtest.py --figures-only                                                                                # solo figuras
-#   → outputs/tables/backtest_metrics.csv, backtest_metrics_by_airport.csv, outlier_strategy_comparison.csv,
-#     fallback_coverage.csv, feature_importance.csv; outputs/figures/model_*.png, error_by_airport.png, …
-
-# Auditoría / reparación de artefactos de backtest (sin reentrenar cuando es posible)
-python src/backtest.py --audit --save-models
-python src/backtest.py --repair --save-models
-
-# Selección del modelo final (ensamble 50/50 vs directo; peso fijo, sin optimizar sobre los folds)
-python src/select_model.py --strategy drop_nonpositive
-
-# Modelos finales: todas las filas válidas de 2025 (drop_nonpositive), iteraciones fijas elegidas con los backtests,
-# sin ventana de early stopping; bundle verificado (predicción antes de guardar == tras cargar). ≈ 8 min/modelo (2 CPU).
-python src/train_baseline.py --models cb_direct cb_residual --strategy drop_nonpositive
-
-# Submission candidata (NO la sube): carga bundles, features de ranking, ensamble, recorte ≥ 0, unión por MVT_ID_mvt,
-# orden y esquema de submitting.parquet, validación antes y después de escribir.
-python src/make_submission.py
-
-# Pruebas (≈ 10 s) e informe
-python -m pytest tests -q
-python src/make_report.py
-```
-
-## Bundle reproducible (`models/final/<modelo>/`)
-
-`model.cbm` · `codec.json` (vocabulario completo del `CategoryCodec`, ajustado solo con training) ·
-`manifest.json` (orden exacto de features, categóricas, estrategia, iteraciones, seed, versiones de Python/Polars/pandas/NumPy/
-CatBoost, fecha, inventario con sha256 de los 14 Parquet, hiperparámetros, importancia) · `check_predictions.npz`
-(predicciones de verificación) · `fallback_level*.parquet` (solo residual). `ModelBundle.load()` reconstruye el modelo sin
-reentrenar y `ModelBundle.verify()` comprueba que predice exactamente lo mismo que antes de guardarse.
-
-## Diseño del modelado (resumen; detalle en `outputs/reports/modeling_report.md`)
-
-- **Features (29)**: calendario (mes, día de semana, hora, fin de semana, seno/coseno),
-  operacionales (`MVT_TIME − AOBT_3/EOBT_1/LOBT/IOBT/SCHED`, `AOBT_3 − SCHED`, `has_aobt3`),
-  congestión (salidas por aeropuerto-hora, aeropuerto-día, aeropuerto-pista-hora; llegadas por
-  aeropuerto-hora) y 10 categóricas. Una única función `build_features()` para training y ranking.
-- **Anti-leakage**: `BLOCK_TIME_UTC_mvt` no se lee; `MVT_ID_mvt` solo trazabilidad; cortes por
-  `MVT_TIME_UTC_mvt`; medianas, vocabularios y early stopping solo con el bloque de entrenamiento;
-  congestión sin target. Auditoría en `outputs/tables/feature_audit.csv`.
-- **Backtests**: ene–jun→jul, ene–oct→nov, ene–nov→dic (2025). Nunca aleatorios.
-- **Outliers**: 4 estrategias solo en entrenamiento; validación siempre contra el target original,
-  con métricas separadas para todas las filas, 0 < y ≤ 3 h y outliers.
-
-## Hallazgos clave
-
-- Training: 4 167 797 × 30 (2 085 047 DEP); ranking: 689 534 × 30 (344 841 DEP); submitting
-  alineado con ranking-DEP. `TAXITIME == MVT_TIME − BLOCK_TIME` exactamente.
-- Solo 10 aeropuertos de salida; el ranking contiene únicamente enero y julio de 2026.
-- Variables ocultas en ranking-DEP: exactamente `BLOCK_TIME_UTC_mvt` y `TAXITIME_SEC_mvt`;
-  `MVT_TIME_UTC_mvt` y `AOBT_3_flt` sí están presentes y son la base de las features operacionales.
-- **CatBoost directo** es el mejor modelo individual en los 3 backtests (RMSE medio ≈ 422 s con
-  `drop_nonpositive`) frente a la mediana jerárquica (≈ 548) y a la baseline operacional (≈ 563).
-  El **ensamble 50/50 directo+residual** (peso fijado a priori) baja el RMSE medio a ≈ 420 s
-  (gana en 2 de 3 folds, menor varianza) y es el seleccionado para `candidate_v1`.
-- El RMSE global lo dominan 25–85 filas por mes con taxi-out > 3 h (RMSE en esas filas ≈ 20 000 s);
-  en el 99.95 % restante el RMSE del CatBoost es de 230–370 s.
-
-## Decisiones documentadas
-
-| Decisión | Motivo |
+| | |
 |---|---|
-| Parquet no se mueven a `data/raw/` | Evitar duplicados/pérdida; el código resuelve ambas ubicaciones |
-| Polars lazy, sin copia de features en disco | 4.2 M filas en < 2 GB de RAM; `load_features()` tarda 5 s |
-| `"NA"` / nulos en categóricas → `"UNK"` | Artefacto de exportación desde R; categoría explícita para CatBoost |
-| Codec entero para categóricas ajustado solo con el bloque de entrenamiento | Sin usar el target; categorías nuevas en validación/ranking → −1 |
-| `MIN_GROUP_N = 30` en la mediana jerárquica | Medianas de grupos pequeños son ruidosas |
-| Early stopping con los últimos 14 días del bloque de entrenamiento (solo backtests) | Temporal; el mes de validación nunca se toca |
-| Modelo final sin early stopping: 1000 iteraciones fijas = min(cap, ceil((max best_iteration+1)/100)·100) | F2/F3 llegaron al tope; la parada de F1 fue espuria (outliers en la ventana) |
-| Ensamble 50/50 con peso fijo a priori | Evita optimizar pesos sobre los mismos folds que deciden |
-| Negativos recortados a 0 en la submission | Δ RMSE ≤ 0 en los tres backtests |
-| CatBoost moderado (1000 it., lr 0.1, depth 6, ctr complexity 1) | Cabe en 3 GB y < 3 min por ajuste |
-| Outliers no se eliminan en validación | La métrica del concurso se calcula sobre el target real |
-| `SEED = 42` en `config.py` | Reproducibilidad |
+| File uploaded | `optimistic-dragon_final.parquet` → bucket `prc-2026-optimistic-dragon`, 2026-10-14 09:18:55 UTC |
+| Evaluator | `Succeeded`, 670 790 pairs against `prc-2026-datasets/final_submitting.parquet` |
+| SHA-256 | `f42b39e02eb7fd09912ed701e2f03f71d632d9b2f389e208eb41dc46aa2216e2` (= `submissions/candidate_final.parquet`) |
+| Model | **V7** (see below). January/July rows are identical to `candidate_v7.parquet`; February/June rows were predicted by the same V7 design re-trained on the 12 months of 2025 (`src/final_build.py`). No 2026 data enters any fit. |
 
-## V2 — mezcla por régimen (S_mix)
+Leaderboard phase (January + July 2026, 344 841 rows), recorded once and never used to tune anything:
 
-Hallazgo (`src/v2_tail_analysis.py`, `outputs/experiments/v2/tail_*.csv`): cuando el aeropuerto no
-registra el off-block real, `BLOCK_TIME_UTC_mvt` se rellena con `SCHED_TIME_UTC_mvt` y el target
-vale **exactamente** `MVT_TIME − SCHED_TIME` (100 049 filas de 2025; 170 de los 202 extremos > 3 h).
-Una segunda familia (17 filas, LIRF sin plan de vuelo) vale ≈ 86 400 s + taxi. Ambas son funciones
-de columnas presentes en ranking, así que V2 predice la esperanza condicional:
+| upload | model | RMSE (s) |
+|---|---|---:|
+| `optimistic-dragon_v1` (2026-10-01) | V3 (regime mixture with date-shift cells) | 317.99 |
+| `optimistic-dragon_v2` (2026-10-02) | V4b (new normal branch + multivariate gate) | 321.80 |
+| `optimistic-dragon_v3` (2026-10-06) | **V6** (V5a + LOBT-gap rule) | **286.58** |
 
-    pred = p0·normal + p1·(MVT − SCHED) + p2·(86 400 + normal),  normal = 0.5·direct_normal + 0.5·residual_V1
+## What the model does (V7)
 
-`p` = CatBoost binario sin pesos de clase (clase 1) + tasa suavizada por aeropuerto/has_aobt3 (clase 2);
-`direct_normal` = CatBoost directo (config V1) entrenado solo con taxi físico (clase 0, ≤ 3 h);
-`residual_V1` = bundle V1 sin cambios. Las etiquetas de régimen solo se calculan con el target del
-bloque de entrenamiento; validación y ranking nunca las ven.
+The target is not a single physical quantity. In the 2025 data three regimes coexist, all of them functions of
+columns that are also present in the ranking files:
 
-Protocolo (`src/v2_protocol.py`): folds may→nov (desarrollo) y dic (holdout, abierto una sola vez con
-la finalista congelada en `finalist_frozen.json`). Resultados (`outputs/experiments/v2/report.md`):
+* **Class 0 — physical taxi-out** (≈ 95 % of rows): off-block time is real; taxi-out is minutes.
+* **Class 1 — `BLOCK_TIME = SCHED_TIME`** (≈ 4.8 %, mostly LIRF): the airport did not record the real off-block
+  and the field was filled with the scheduled time, so the target equals exactly `MVT_TIME − SCHED_TIME`
+  (often hours).
+* **Class 2 — one-day date shift** (≈ 10 rows/year, LIRF): no NM off-block and a flight that departs on the
+  calendar day after its schedule; the target is ≈ 86 400 s + taxi.
 
-| | V1 bajo protocolo | V2 S_mix |
-|---|---:|---:|
-| RMSE pooled desarrollo (may–nov) | 390.6 | **320.9** |
-| RMSE holdout diciembre | 332.2 | **241.1** |
-| MAE pooled / cobertura ≤ 5 min | 161.1 / 87.71 % | 159.3 / 87.80 % |
-| Folds y aeropuertos que mejoran | — | 7/7 · 10/10 |
-| Bootstrap pareado por bloques aeropuerto-día, P(mejora) | — | 1.000 (IC 95 % Δ: −94 a −43 s) |
+V7 predicts the conditional expectation over the three regimes and then applies two physically motivated
+overrides:
 
-```bash
-python src/v2_tail_analysis.py                                             # análisis de regímenes (sin entrenar)
-python src/v2_protocol.py --variants v1_protocol S_mixture --resume        # 7 folds de desarrollo
-python src/v2_analysis.py                                                  # métricas, bootstrap, conformal, criterios
-python src/v2_protocol.py --variants v1_protocol S_mixture --folds Dec --resume && python src/v2_analysis.py --holdout
-python src/v2_final.py train && python src/v2_final.py submit             # bundles V2 + candidate_v2.parquet
-python src/v2_report.py
+```
+b   = 0.5 · CatBoost_normal + 0.5 · LightGBM_normal            # class-0 branch, trained on 0 < y ≤ 3 h
+p1  = P(class 1 | x)                                            # CatBoost gate (V4b), 3 seeds averaged
+cell = date(MVT) > date(SCHED) and no AOBT_3                    # LIRF-dominated cell
+pred = cell ? P0·b + P1·(MVT − SCHED) + P2·(86 400 + b)          # 3-class mixture (RegimeClassifier2, nested cell counts)
+            : b + p1 · ((MVT − SCHED) − b)
+pred = max(pred, 0)
+V7c : rows with no AOBT_3 and neighbour congestion > 600 s  →  b := max(b, mean taxi proxy of neighbours)
+LOBT: rows with MVT − LOBT > 2 h                            →  pred := max(0, −1228.2 + 1.0153 · (MVT − LOBT))
 ```
 
-V1 no se modifica: `candidate_v1.parquet` conserva su SHA-256.
+* **Features** (`src/prepare_training.py`, `v2_features.py`, `v3_protocol.py`, `v4b_features.py`): calendar,
+  NM-plan deltas (`MVT − AOBT_3/EOBT_1/LOBT/IOBT/SCHED` and their pairwise differences), congestion counts per
+  airport-hour/day/runway, relative congestion, arrival context (previous arrival's taxi-in and delay, copy rate of
+  arrivals), date shift, stand/runway/operator/route keys. Target encodings are computed out-of-month inside the
+  training block only.
+* **Gate** (`v4b_protocol.GateClassifier`): CatBoost binary classifier with 30 % negative subsampling and
+  re-weighting; calibrated p1 feeds the soft mixture ("variant S").
+* **Normal branch**: CatBoost (depth 8, 3 000 it.) and LightGBM (255 leaves, 2 000 it., out-of-month target
+  encoding) trained on class-0 rows ≤ 3 h; averaged 50/50 (`src/v5a_final.py`).
+* **LOBT-gap rule** (`src/v6_final.py`): when the aircraft departs more than 2 h after its last planned off-block
+  the NM plan is stale; in 2025, 143/143 such rows had taxi-out > 1 h and follow `y ≈ MVT − LOBT − 1 000 s`.
+  Trees cannot extrapolate this slope-1 relation; a straight line fitted on those 143 rows can.
+* **V7c** (`src/v7c_noaobt.py`): rows without their own AOBT_3 during extreme congestion (neighbour taxi proxy
+  > 10 min above the airport median) are systematically under-predicted; their normal branch is raised to the
+  neighbours' mean. No fitted parameter.
 
-## V3 — etapa 2 sobre V2 (S3A_mix)
+## Validation protocol (how every decision was made)
 
-Motivación (`outputs/experiments/v3/report.md`, sección 1): del error cuadrático restante de S_mix en
-desarrollo, el 25 % estaba en **10 filas** de clase 2 (fecha del bloque desplazada un día) y el 16 % en la
-clase 1; un clasificador de régimen perfecto bajaría el RMSE pooled de 321 a 231 s. Mecanismo de la clase 2:
-en LIRF, sin AOBT_3 y con `fecha(MVT) > fecha(SCHED)`, el off-block se registra con la fecha del programado.
+* Two outer folds that mimic the ranking months: **LOJO** (train Mar–Dec, evaluate January 2025) and **LOJuO**
+  (train Jan + Mar–Jun + Sep–Dec, evaluate July 2025); February/August serve as inner months for calibration and
+  screening. Metric: `RMSE_w = sqrt(0.4429·MSE_Jan + 0.5571·MSE_Jul)` (weights = share of rows in the ranking).
+* Uncertainty: paired block bootstrap by airport-day (1 000 replicates); single-row influence checks.
+* Every candidate had an **acceptance rule written down before the outer months were looked at**
+  (`outputs/experiments/v*/protocol.md`). Rejected candidates are kept in the repository.
+* Leaderboard scores were recorded once in `submissions/upload_manifest.json` and never used to choose or tune.
+  The organisers' notice about exploiting the ranking process was followed literally: 3 uploads in the
+  leaderboard phase, 1 in the final phase.
 
-Cambios (mismo protocolo de 8 folds; V2 intacta, sus componentes se reutilizan desde `models/experiments/v2/preds`):
+| step | change | validated gain (RMSE_w, Jan/Jul 2025) | 95 % CI |
+|---|---|---:|---|
+| V2 → V3 | regime mixture + date-shift cells | pooled dev −23 s, December −7 s | P(improve) 1.00 |
+| V3 → V4b | new normal branch + multivariate gate | −14.6 s | [−25.7, −0.8] |
+| V4b → V5a | 50/50 CatBoost + LightGBM normal branch | −1.4 s | [−2.0, −0.9] |
+| V5a → V6 | LOBT-gap rule | −11.5 s (mostly a few rows) | [−34.9, −0.35] |
+| V6 → V7 | V7c congestion fix for rows without AOBT_3 | −0.35 s (Jan −0.7, Feb −8.8) | [−0.86, −0.01] |
 
-* **2a — clasificador de régimen** (`src/v3_protocol.py`, `RegimeClassifier2`): feature `days_after_sched`
-  (fecha MVT − fecha SCHED, ambas en ranking) y, en las celdas «desplazada ≥ 1 día y sin AOBT_3» por aeropuerto,
-  actualización bayesiana de p1/p2 con las cuentas del bloque de entrenamiento y pseudo-recuento α = 20 (prefijado;
-  0/5/100 solo como ablación/sensibilidad). La ablación «solo feature» da −1 s: la ganancia está en las celdas.
-* **2b — rama normal con congestión** (`A_surface`): `direct_normal_s` y `residual_normal_s` con features V1 +
-  `src/v2_features.py`, entrenados solo con clase 0 y y ≤ 3 h. Por sí solas −1,8 s (7/7 folds): las features horarias
-  de V1 ya capturaban casi toda la congestión; mejoran MAE (−2,3 s) y cobertura ≤ 5 min (+0,36 pp).
-* **2c — celdas jerárquicas por banda de retraso (post-hoc, EXPERIMENTAL)**: al abrir diciembre con la finalista
-  congelada (S2A_mix) se vio que la celda plana reparte la masa de clase 2 a filas de retraso corto (en 2025: 1/43 con
-  retraso < 12 h frente a 10/25 con ≥ 12 h). `proba_b20` añade una segunda actualización por banda con umbral FIJO
-  de 12 h elegido tras ver diciembre: S3A_mix se etiqueta como experimental, no como mejora confirmada.
-* **2d — umbral elegido dentro de cada ventana de entrenamiento (validación anidada)**: `proba_n20` repite el
-  esquema de 2c, pero el umbral (6/9/12/18/24 h, o celda plana) se elige por log-loss leave-one-out **solo con las
-  filas de celda del bloque de entrenamiento** de cada fold (May–Aug y Dec eligen 12 h; Sep–Nov, 18 h; todo 2025, 12 h).
-  Diciembre nunca interviene en la elección del parámetro; lo que sigue siendo post-hoc es la hipótesis, y eso solo lo
-  valida el ranking 2026. S4A_mix es la candidata final (`final_choice.json`); la regla prefijada elige S2A_mix.
-* **c8 redefinido** (propuesta de revisión externa, aplicada a posteriori sin cambiar la finalista de la regla): el
-  criterio original «la ganancia no depende de pocas filas» es inaplicable a una corrección de régimen raro; se
-  sustituye por «no dañar al grueso» (RMSE de la población normal no empeora > 1 s y ≤ 2 de 10 aeropuertos empeoran).
+Honest caveats: the RMSE of these months is dominated by a few hundred rows with errors of 10³–10⁵ s, so
+leaderboard differences of ±5 s between models are within the luck of those rows (V4b scored worse than V3 despite
+−14.6 s in validation). The LOBT rule's form was chosen after looking at all of 2025; only its coefficients were
+fitted out-of-month. V7c was the third variant tried on the same months (the first two were rejected and are
+documented); the accepted one has no fitted parameter.
 
-| RMSE (s) | V1P | S_mix (V2) | S2A_mix (regla prefijada) | S3A_mix (experimental) | **S4A_mix (candidate_v3)** |
-|---|---:|---:|---:|---:|---:|
-| Desarrollo pooled (may–nov) | 390.6 | 320.9 | 300.9 | 297.1 | **297.8** |
-| Diciembre (segunda apertura) | 332.2 | 241.1 | 237.8 | 234.4 | **234.4** |
-| MAE / cobertura ≤ 5 min (desarrollo) | 161.1 / 87.71 % | 159.3 / 87.80 % | 156.8 / 88.16 % | 156.8 / 88.16 % | **156.8 / 88.16 %** |
-| Folds no peores que S_mix · bootstrap P(mejora) | — | — | 7/7 · 1.000 | 7/7 · 1.000 | 7/7 · 1.000 (IC 95 % Δ −36 a −10 s) |
+## Rejected routes (all documented with their protocols)
 
-Apuesta frente a parte robusta (frente a S_mix): de los −23,1 s de S4A_mix en desarrollo, solo **−2,4 s** vienen de fuera
-de la celda LIRF (features de congestión; mejoran los 10 aeropuertos) y **−20,7 s** de 50 filas de la celda; en diciembre,
-−4,1 s fuera y −2,6 s dentro (5 filas). Escalera de riesgo: V1 (control conservador; apuesta implícita, se entrenó con los
-mismos targets) < V2 S_mix (apuesta moderada, confirmada) < S2A_mix (ampliación preseleccionada; mejora rigurosamente
-defendible) < S3A/S4A (apuesta agresiva y post-hoc en ~25 filas del ranking; S4A es la mejor apuesta). Con todo 2025 el
-umbral anidado coincide con 12 h, así que `candidate_v3.parquet` es byte-idéntica a la versión S3A (misma SHA-256).
-Todas las desviaciones del protocolo original (E1–E5), la decisión formal sobre c8 (diagnóstico, no veto) y la política de
-subida/leaderboard están en `outputs/experiments/v3/protocol_amendments.md`.
+| route | where | outcome |
+|---|---|---|
+| OPDI (open ADS-B ground events) as off-block proxy | `outputs/experiments/v5/protocol.md` §3 | 6 % coverage, worse than the model where available |
+| LightGBM linear trees; blended LightGBM gate | `v5` | ≈ 0; gain came from one row per month |
+| Airline-prefix gate for LIRF flights without NM plan | `outputs/experiments/v6/protocol.md` §2 | +0.4 s |
+| Own-AOBT and neighbour-anchored congestion corrections for all rows | `outputs/experiments/v7/protocol.md` | +0.1 s (overfits a February episode) |
+| Learning the class of decisive rows from the leaderboard | — | would reach ≈ 230 s; not done (rules) |
 
-Advertencias: la ganancia sigue concentrada en pocas filas (celda LIRF: 68 filas en 2025, **25 en el ranking**);
-depende de que el artefacto BLOCK = SCHED persista en 2026 (las llegadas del ranking, donde BLOCK_TIME es visible,
-lo muestran con la misma tasa que en 2025); una sola fila de 60 000 s de error mueve el RMSE final ≈ 20 s.
+## Reproduce
+
+Hardware used: a MacBook Air (10 threads, `.venv-mac`) for the CatBoost components and a 2-CPU/6 GB cloud
+container for LightGBM, validation and the final assembly. Python 3.10–3.11, `requirements.txt`
+(+ `lightgbm>=4.3` for V5 onwards).
 
 ```bash
-python src/v3_protocol.py --variants S2_mixture A_surface --resume            # 7 folds de desarrollo (≈ 2,5 h, 2 CPU)
-python src/v3_analysis.py --freeze                                            # criterios vs S_mix y V1P; congela la finalista
-python src/v3_protocol.py --variants S2_mixture A_surface --folds Dec --resume && python src/v3_analysis.py --holdout
-python src/v3_analysis.py --holdout --final-choice S4A_mix --reason "..."     # elección documentada (post-hoc, parámetro anidado)
-python src/v3_final.py train && python src/v3_final.py submit                # bundles V3 + candidate_v3.parquet
-python src/v3_report.py && python -m pytest tests -q
+# 0. Put the 14 original Parquet files in the project root or data/raw/ (they are never modified; see "Data")
+python -m pytest tests -q                       # 60 tests (feature/anti-leakage/combination/no-upload checks)
+
+# 1. V4b components, 12 months, seeds 42/7/2025  →  models/experiments/v4b/final/*__rank.npy, candidate_v4b
+bash src/v4b_run_candidate.sh                   # ≈ 2 h on 10 threads
+# 2. LightGBM normal branch + V5a blend          →  models/experiments/v5/final/lgb_const__s42__rank.npy, candidate_v5a
+bash src/v5a_run_candidate.sh                   # ≈ 12 min
+# 3. V6 = V5a + LOBT rule, V7 = V6 + V7c (seconds; use cached predictions)
+bash src/v6_run_candidate.sh && python src/v7_final.py
+
+# 4. Final phase (4 months). Build data/final/ with final_submitting.parquet as submitting.parquet and
+#    final_ranking.parquet restricted to the new months (Feb + Jun 2026) as ranking.parquet, plus links to the
+#    12 training files; January/July are copied from candidate_v7.
+PRC_DATA_DIR=data/final python src/final_build.py        # ≈ 22 min on 2 CPUs → submissions/candidate_final.parquet
+
+# Validation (what produced the numbers above)
+python src/v4b_protocol.py --folds LOJO LOJuO --seeds 42 7 2025 --resume          # ≈ hours, 9-month components
+python src/v4b_analysis.py && python src/v4b_report.py
+python src/v5_lgb.py --fold LOJO --kinds const --outer && python src/v5_lgb.py --fold LOJuO --kinds const --outer
+python src/v5_eval_inner.py --fold LOJO && python src/v5_eval_inner.py --fold LOJuO && python src/v5_eval_outer.py
+python src/v6_rule_check.py && python src/v6_prefix_gate.py
+python src/v7_congestion.py && python src/v7b_neighbour.py && python src/v7c_noaobt.py
 ```
 
-## Git y elegibilidad
+Known reproducibility limits: the final CatBoost/LightGBM models are not persisted (only their ranking
+predictions, `.npy`, are); re-running the scripts reproduces the submissions byte-for-byte on the same machine
+(`candidate_v6`/`v7` were rebuilt on a second machine with identical SHA-256). In the final-phase file the
+February/June normal branch uses LightGBM only (the CatBoost branch could not be retrained in the time available
+after the new files were published); the validated cost of dropping the blend is ≈ 1.4 s.
 
-Repositorio git local inicializado (sin remoto, sin push). `.gitignore` excluye Parquet, `data/`,
-`models/`, `submissions/`, `.env*`, credenciales, `*.npy`, `*.cbm`. Comprobado con `git ls-files`.
+## Repository layout
 
-## Próximos pasos
+```
+├── *.parquet                      # original challenge files (read-only, not in git)
+├── src/
+│   ├── config.py, io_utils.py     # paths ($PRC_DATA_DIR → data/raw/ → project root), columns, SEED = 42
+│   ├── validate_data.py, eda.py, run_eda.py, prepare_training.py, modeling_utils.py
+│   ├── train_baseline.py, backtest.py, select_model.py, make_submission.py, make_report.py   # V1 (baselines, backtests)
+│   ├── v2_*.py                    # V2: regime analysis, 8-fold protocol, congestion features, mixture
+│   ├── v3_*.py                    # V3: RegimeClassifier2 with date-shift cells, candidate_v3
+│   ├── v4_*.py, v4b_*.py          # V4 audits/oracles; V4b: new normal branch + multivariate gate, LOJO/LOJuO protocol
+│   ├── v5_*.py, v5a_final.py      # LightGBM branch, blended gate, OPDI probe, expected-RMSE model
+│   ├── v6_*.py                    # LOBT-gap rule (+ rejected airline-prefix gate)
+│   ├── v7_*.py, v7b_*.py, v7c_*.py, v7_final.py   # congestion corrections (two rejected, V7c accepted)
+│   └── final_build.py             # phase-2 assembly (4 months)
+├── tests/                         # pytest, 60 tests
+├── outputs/experiments/v2…v7, final/   # protocols (pre-registered rules), checks (JSON), reports, logs
+├── outputs/{tables,figures,reports}/   # V1 EDA and backtests
+├── docs/METHOD.md                 # method report for the review
+├── docs/README_fases_1-3_es.md    # previous README (V1–V3, Spanish)
+├── submissions/                   # candidates + JSON metadata, upload scripts, manifest (not in git)
+├── models/                        # predictions and caches (not in git)
+├── requirements.txt, requirements-lock.txt, LICENSE (GPL-3.0), .gitignore
+```
 
-Ver la sección 9 de `outputs/reports/modeling_report.md`.
+## Data handling and anti-leakage
+
+* The 14 original Parquet files are only read (`POLARS_UNKNOWN_EXTENSION_TYPE_BEHAVIOR=load_as_storage` for the
+  R extension type of `AIRCRAFT_OPERATOR_flt`). Nothing in `data/`, `models/`, `submissions/`, credentials or
+  Parquet is tracked by git.
+* `BLOCK_TIME_UTC_mvt` and the target are never read for ranking rows; `MVT_ID_mvt` is used only to align rows
+  and `FLIGHT_ID_mvt` only to link arrivals and departures, never as numeric predictors.
+* Regime labels are derived from the target of the training block only. Target encodings exclude the row's own
+  month. Congestion and arrival-context features use only timestamps and columns that are present in the ranking
+  files (including arrivals' `BLOCK_TIME`, which is visible for ARR rows).
+* Fold splits are by calendar month; nothing is ever selected on the evaluation month.
+
+## Uploads
+
+Uploads are done by hand with the MinIO client from `submissions/upload_optimistic-dragon_*.sh`: local SHA-256
+and row/schema checks, refusal to overwrite an existing remote name, remote SHA-256 verification, result written to
+`submissions/upload_result_*.json`. Credentials are never stored in the repository.
