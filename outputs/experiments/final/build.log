@@ -1,0 +1,8 @@
+[02:54:06] features feb/jun: 325,949 salidas (0.0 min)
+[02:54:09] regla LOBT n=143 | celda 45 | V7c 139 | L>2h 29
+[02:54:10] gate: en caché
+[03:05:50] lgb_const: hecho en 11.7 min
+[03:11:38] c0_clf: hecho en 5.8 min
+[03:11:38] feb/jun: media 987 s, p99 2041, máx 69017
+[03:11:40] {"file": "submissions/candidate_final.parquet", "sha256": "f42b39e02eb7fd09912ed701e2f03f71d632d9b2f389e208eb41dc46aa2216e2", "rows": 670790, "ok": true}
+[03:11:40] NO se ha subido nada al bucket del concurso.
